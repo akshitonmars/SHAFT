@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from "react"
+import { useEffect, useState, type FormEvent, type ReactNode } from "react"
 import type { User } from "firebase/auth"
 import { signOut } from "firebase/auth"
 import {
@@ -7,7 +7,7 @@ import {
   Plus, Search, Settings, Sparkles, X,
 } from "lucide-react"
 import { auth } from "../lib/firebase"
-import { readUserData, saveUserData } from "../lib/onboarding"
+import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
 
 interface WorkspaceProps { user: User }
@@ -29,12 +29,20 @@ export function Workspace({ user }: WorkspaceProps) {
   const [error, setError] = useState("")
   const [query, setQuery] = useState("")
   const [signingOut, setSigningOut] = useState(false)
+  const [cloudReady, setCloudReady] = useState(false)
+  useEffect(() => {
+    let active = true
+    loadUserData(user.uid).then((next) => { if (active) { setData(next); setCloudReady(true) } }).catch(() => {
+      if (active) { setError("Couldn't load your cloud workspace. Check your connection and refresh."); setCloudReady(true) }
+    })
+    return () => { active = false }
+  }, [user.uid])
 
   const displayName = data.name || user.displayName || (user.email ? user.email.split("@")[0] : "Builder")
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "S"
   const filteredProjects = data.projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase()) || project.description.toLowerCase().includes(query.toLowerCase()))
 
-  const createProject = (event: FormEvent<HTMLFormElement>) => {
+  const createProject = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!projectName.trim() || !description.trim()) {
       setError("Add both a project name and a description.")
@@ -47,7 +55,7 @@ export function Workspace({ user }: WorkspaceProps) {
       createdAt: new Date().toISOString(),
     }
     try {
-      const next = saveUserData(user.uid, { projects: [...data.projects, project] })
+      const next = await saveUserData(user.uid, { projects: [...data.projects, project] })
       setData(next)
       setProjectName("")
       setDescription("")
@@ -55,7 +63,7 @@ export function Workspace({ user }: WorkspaceProps) {
       setShowCreate(false)
       setView("My Projects")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Project could not be saved on this device.")
+      setError(err instanceof Error ? err.message : "Project could not be saved to the cloud. Check your connection and try again.")
     }
   }
 
@@ -69,6 +77,8 @@ export function Workspace({ user }: WorkspaceProps) {
       setSigningOut(false)
     }
   }
+
+  if (!cloudReady) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] text-sm text-slate-500">Loading your cloud workspace…</main>
 
   return (
     <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
