@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { Home } from './pages/Home';
 import { Privacy } from './pages/Privacy';
 import { Terms } from './pages/Terms';
+import { SignUp } from './pages/SignUp';
+import { SignIn } from './pages/SignIn';
+import { AuthCallback } from './pages/AuthCallback';
 
 function getInitialPath(): string {
   if (typeof window === 'undefined') return '/';
   const pathname = window.location.pathname;
+  if (pathname === '/auth/callback') return '/auth/callback';
+  if (pathname === '/signin') return '/signin';
+  if (pathname === '/signup' || pathname === '/get-started') return '/signup';
   if (pathname === '/privacy' || pathname.startsWith('/privacy/')) {
     return '/privacy';
   }
@@ -83,6 +89,10 @@ export const App: React.FC = () => {
   if (currentPath === '/terms') {
     return <Terms onNavigateHome={() => navigateTo('/')} />;
   }
+
+  if (currentPath === '/signin') return <SignIn />;
+  if (currentPath === '/signup') return <SignUp />;
+  if (currentPath === '/auth/callback') return <AuthCallback />;
 
   return <Home onPrivacyClick={() => navigateTo('/privacy')} />;
 };
