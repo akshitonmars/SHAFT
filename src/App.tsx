@@ -10,6 +10,7 @@ import { AuthCallback } from "./pages/AuthCallback"
 import { Onboarding } from "./pages/Onboarding"
 import { Workspace } from "./pages/Workspace"
 import { DatabaseExplorer } from "./pages/DatabaseExplorer"
+import { GitHubConnector } from "./pages/GitHubConnector"
 import { auth } from "./lib/firebase"
 import { loadUserData } from "./lib/onboarding"
 
@@ -22,6 +23,7 @@ function getInitialPath(): string {
   if (pathname === "/onboarding") return "/onboarding"
   if (pathname === "/workspace") return "/workspace"
   if (pathname === "/database") return "/database"
+  if (pathname === "/github") return "/github"
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return "/privacy"
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
   const hash = window.location.hash
@@ -55,7 +57,7 @@ export const App: React.FC = () => {
     if (!user) {
       setCloudReady(true)
       setCloudError(false)
-      if (currentPath === "/onboarding" || currentPath === "/workspace" || currentPath === "/database") {
+      if (currentPath === "/onboarding" || currentPath === "/workspace" || currentPath === "/database" || currentPath === "/github") {
         window.history.replaceState({}, "", "/signin")
         setCurrentPath("/signin")
       }
@@ -145,6 +147,10 @@ export const App: React.FC = () => {
   if (currentPath === "/database") {
     if (!authReady || !user) return <LoadingScreen />
     return <DatabaseExplorer user={user} />
+  }
+  if (currentPath === "/github") {
+    if (!authReady || !user) return <LoadingScreen />
+    return <GitHubConnector user={user} />
   }
   if (currentPath === "/workspace") {
     if (!authReady || !user) return <LoadingScreen />
