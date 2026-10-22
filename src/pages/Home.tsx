@@ -31,7 +31,7 @@ const FEATURES = [
 
 const display = { fontFamily: "Amaranth, sans-serif" }
 
-export default function Home() {
+export function Home() {
   const scrollToProduct = () =>
     document.getElementById("product")?.scrollIntoView({ behavior: "smooth" })
 
@@ -104,3 +104,5 @@ export default function Home() {
     </main>
   )
 }
+
+export default Home
