@@ -13,8 +13,7 @@ export interface ShaftUserData {
 const keyFor = (uid: string) => "shaft:v1:user:" + uid
 const emptyData = (): ShaftUserData => ({ name: "", role: "", projects: [], onboardingCompleted: false, onboardingStep: 0 })
 function normalize(value: Partial<ShaftUserData> = {}): ShaftUserData {
-  return {
-    ...emptyData(), ...value,
+  return { ...emptyData(), ...value,
     name: typeof value.name === "string" ? value.name : "",
     role: typeof value.role === "string" ? value.role : "",
     projects: Array.isArray(value.projects) ? value.projects : [],
@@ -22,14 +21,14 @@ function normalize(value: Partial<ShaftUserData> = {}): ShaftUserData {
     onboardingStep: typeof value.onboardingStep === "number" ? Math.min(4, Math.max(0, value.onboardingStep)) : 0,
   }
 }
-function cache(uid: string, data: ShaftUserData) {
-  try { window.localStorage.setItem(keyFor(uid), JSON.stringify(data)) } catch { /* Cache is optional; Firestore is canonical. */ }
-}
 function cached(uid: string): ShaftUserData {
   try {
     const raw = window.localStorage.getItem(keyFor(uid))
     return raw ? normalize(JSON.parse(raw) as Partial<ShaftUserData>) : emptyData()
   } catch { return emptyData() }
+}
+function cache(uid: string, data: ShaftUserData) {
+  try { window.localStorage.setItem(keyFor(uid), JSON.stringify(data)) } catch { /* Optional cache only. */ }
 }
 export async function loadUserData(uid: string): Promise<ShaftUserData> {
   const ref = doc(db, "users", uid)
@@ -39,16 +38,16 @@ export async function loadUserData(uid: string): Promise<ShaftUserData> {
     cache(uid, data)
     return data
   }
-  const legacy = cached(uid)
-  await setDoc(ref, { ...legacy, updatedAt: new Date().toISOString() })
-  cache(uid, legacy)
-  return legacy
+  const oldData = cached(uid)
+  await setDoc(ref, { ...oldData, updatedAt: new Date().toISOString() })
+  cache(uid, oldData)
+  return oldData
 }
-export async function saveUserData(uid: string, patch: Partial<ShaftUserData>): Promise<ShaftUserData> {
-  const current = await loadUserData(uid)
-  const next = normalize({ ...current, ...patch })
-  await setDoc(doc(db, "users", uid), { ...next, updatedAt: new Date().toISOString() })
+export function readUserData(uid: string): ShaftUserData { return cached(uid) }
+export function saveUserData(uid: string, patch: Partial<ShaftUserData>): ShaftUserData {
+  const next = normalize({ ...cached(uid), ...patch })
   cache(uid, next)
+  void setDoc(doc(db, "users", uid), { ...next, updatedAt: new Date().toISOString() })
   return next
 }
 export async function hasCompletedOnboarding(uid: string): Promise<boolean> {
