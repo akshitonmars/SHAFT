@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app"
 import { getFirestore } from "firebase/firestore"
-import { getFirestore } from "firebase/firestore"
 import {
   GithubAuthProvider,
   GoogleAuthProvider,
@@ -20,7 +19,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
 export const db = getFirestore(app)
 export const googleProvider = new GoogleAuthProvider()
 export const githubProvider = new GithubAuthProvider()
