@@ -10,7 +10,7 @@ import { AuthCallback } from "./pages/AuthCallback"
 import { Onboarding } from "./pages/Onboarding"
 import { Workspace } from "./pages/Workspace"
 import { auth } from "./lib/firebase"
-import { hasCompletedOnboarding } from "./lib/onboarding"
+import { loadUserData } from "./lib/onboarding"
 
 function getInitialPath(): string {
   if (typeof window === "undefined") return "/"
@@ -45,28 +45,44 @@ export const App: React.FC = () => {
     setAuthReady(true)
   }), [])
 
+  const [cloudReady, setCloudReady] = useState(false)
+  const [cloudError, setCloudError] = useState(false)
+
   useEffect(() => {
     if (!authReady) return
-    const protectedRoute = currentPath === "/onboarding" || currentPath === "/workspace"
-    let destination: string | null = null
-    if (!user && protectedRoute) {
-      destination = "/signin"
-    } else if (user) {
-      const complete = hasCompletedOnboarding(user.uid)
+    if (!user) {
+      setCloudReady(true)
+      setCloudError(false)
+      if (currentPath === "/onboarding" || currentPath === "/workspace") {
+        window.history.replaceState({}, "", "/signin")
+        setCurrentPath("/signin")
+      }
+      return
+    }
+    let active = true
+    setCloudReady(false)
+    loadUserData(user.uid).then((data) => {
+      if (!active) return
+      setCloudError(false)
+      let destination: string | null = null
       if (currentPath === "/" || currentPath === "/signin" || currentPath === "/signup") {
-        destination = complete ? "/workspace" : "/onboarding"
-      } else if (currentPath === "/onboarding" && complete) {
+        destination = data.onboardingCompleted ? "/workspace" : "/onboarding"
+      } else if (currentPath === "/onboarding" && data.onboardingCompleted) {
         destination = "/workspace"
-      } else if (currentPath === "/workspace" && !complete) {
+      } else if (currentPath === "/workspace" && !data.onboardingCompleted) {
         destination = "/onboarding"
       }
-    }
-    if (destination && destination !== currentPath) {
-      window.history.replaceState({}, "", destination)
-      setCurrentPath(destination)
-      window.scrollTo({ top: 0, behavior: "auto" })
-    }
-  }, [authReady, user, currentPath])
+      if (destination && destination !== currentPath) {
+        window.history.replaceState({}, "", destination)
+        setCurrentPath(destination)
+        window.scrollTo({ top: 0, behavior: "auto" })
+      }
+      setCloudReady(true)
+    }).catch(() => {
+      if (active) { setCloudError(true); setCloudReady(true) }
+    })
+    return () => { active = false }
+  }, [authReady, user?.uid, currentPath])
 
   useEffect(() => {
     const handlePopState = () => setCurrentPath(getInitialPath())
@@ -118,6 +134,8 @@ export const App: React.FC = () => {
   if (currentPath === "/signin") return <SignIn />
   if (currentPath === "/signup") return <SignUp />
   if (currentPath === "/auth/callback") return <AuthCallback />
+  if (cloudError) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] p-6 text-[#101319]"><div className="max-w-md rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-semibold">Could not load SHAFT cloud data</h1><p className="mt-2 text-sm leading-6 text-slate-600">Enable Cloud Firestore in Firebase and apply the user-only security rules, then retry.</p><button className="mt-4 rounded-xl bg-[#101319] px-4 py-2 text-sm font-semibold text-white" onClick={() => window.location.reload()}>Retry</button></div></main>
+  if (!cloudReady && user) return <LoadingScreen />
   if (currentPath === "/onboarding") {
     if (!authReady || !user) return <LoadingScreen />
     return <Onboarding user={user} onFinish={() => navigateTo("/workspace", true)} />
