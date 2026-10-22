@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 type NavbarProps = { onExploreClick?: () => void };
@@ -10,7 +10,7 @@ const NAV_LINKS = [
 ];
 
 const styles = `
-@import url('https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600;650;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
 
 .shaftNavRoot {
   --sn-ink: #152332;
@@ -205,7 +205,7 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
   }, [menuOpen]);
 
   const closeMenu = () => setMenuOpen(false);
-  const handleLinkClick = (event: React.MouseEvent<HTMLAnchorElement>, explore?: boolean) => {
+  const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>, explore?: boolean) => {
     if (explore && onExploreClick) {
       event.preventDefault();
       onExploreClick();
