@@ -1,6 +1,10 @@
 import { useInView } from "./motion"
 
-export default function Footer() {
+interface FooterProps {
+  onPrivacyClick?: () => void
+}
+
+export default function Footer({ onPrivacyClick }: FooterProps = {}) {
   const [ref, on] = useInView<HTMLElement>(0.3)
   return (
     <footer ref={ref} className="bg-[#0A1F6B] px-6 pb-10 text-sm text-white/50 sm:px-10">
@@ -10,7 +14,18 @@ export default function Footer() {
         <nav aria-label="Footer" className="flex gap-6">
           <a href="#product" className="transition-colors hover:text-white">Product</a>
           <a href="/terms" className="transition-colors hover:text-white">Terms</a>
-          <a href="/privacy" className="transition-colors hover:text-white">Privacy</a>
+          <a
+            href="/privacy"
+            onClick={(e) => {
+              if (onPrivacyClick) {
+                e.preventDefault()
+                onPrivacyClick()
+              }
+            }}
+            className="transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#43B5FF] rounded px-1"
+          >
+            Privacy
+          </a>
         </nav>
         <span>© 2026 Shaft</span>
       </div>

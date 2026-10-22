@@ -23,7 +23,11 @@ const PAGE_CSS = `
 
 const display = { fontFamily: "Amaranth, sans-serif" }
 
-export function Home() {
+interface HomeProps {
+  onPrivacyClick?: () => void
+}
+
+export function Home({ onPrivacyClick }: HomeProps = {}) {
   const scrollToProduct = () =>
     document.getElementById("product")?.scrollIntoView({ behavior: "smooth" })
 
@@ -31,7 +35,7 @@ export function Home() {
     <main className="bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{PAGE_CSS}</style>
       <MotionStyles />
-      <Navbar onExploreClick={scrollToProduct} />
+      <Navbar onExploreClick={scrollToProduct} onPrivacyClick={onPrivacyClick} />
 
       <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-40 pt-32 text-center">
         <DotField />
@@ -70,7 +74,18 @@ export function Home() {
 
         <nav aria-label="Legal" className="absolute bottom-32 left-6 z-10 flex gap-5 text-xs text-slate-500 sm:left-10">
           <a href="/terms" className="transition-colors hover:text-[#101319]">Terms</a>
-          <a href="/privacy" className="transition-colors hover:text-[#101319]">Privacy</a>
+          <a
+            href="/privacy"
+            onClick={(e) => {
+              if (onPrivacyClick) {
+                e.preventDefault()
+                onPrivacyClick()
+              }
+            }}
+            className="transition-colors hover:text-[#101319] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#43B5FF] rounded px-1"
+          >
+            Privacy
+          </a>
         </nav>
       </section>
 
@@ -97,7 +112,7 @@ export function Home() {
       <Faq />
       <SectionDivider to="#07123A" />
       <LogoShowcase />
-      <Footer />
+      <Footer onPrivacyClick={onPrivacyClick} />
     </main>
   )
 }

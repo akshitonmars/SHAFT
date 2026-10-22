@@ -3,8 +3,12 @@ import { useEffect, useRef } from "react"
 const GAP = 26
 const REACH = 150
 
-/** Dotted grid. Dots swell and darken near the cursor, then ease back to rest. */
-export default function DotField() {
+export interface DotFieldProps {
+  theme?: "light" | "cosmic" | "dark"
+}
+
+/** Dotted grid. Dots swell and react near the cursor, then ease back to rest. */
+export default function DotField({ theme = "light" }: DotFieldProps = {}) {
   const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -23,6 +27,8 @@ export default function DotField() {
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h)
+      const isCosmic = theme === "cosmic" || theme === "dark"
+
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const x = c * GAP
@@ -32,9 +38,19 @@ export default function DotField() {
           const target = d < REACH ? 1 - d / REACH : 0
           levels[i] += (target - levels[i]) * 0.09
           const lv = levels[i]
+
           ctx.beginPath()
-          ctx.arc(x, y, 1.1 + lv * 2.6, 0, Math.PI * 2)
-          ctx.fillStyle = `rgba(${Math.round(120 - 85 * lv)},${Math.round(134 - 55 * lv)},${Math.round(160 + 40 * lv)},${0.32 + lv * 0.68})`
+          if (isCosmic) {
+            ctx.arc(x, y, 1.15 + lv * 2.85, 0, Math.PI * 2)
+            const r = Math.round(67 + 53 * (1 - lv))
+            const g = Math.round(181 + 26 * lv)
+            const b = 255
+            const a = 0.16 + lv * 0.74
+            ctx.fillStyle = `rgba(${r},${g},${b},${a})`
+          } else {
+            ctx.arc(x, y, 1.1 + lv * 2.6, 0, Math.PI * 2)
+            ctx.fillStyle = `rgba(${Math.round(120 - 85 * lv)},${Math.round(134 - 55 * lv)},${Math.round(160 + 40 * lv)},${0.32 + lv * 0.68})`
+          }
           ctx.fill()
         }
       }
@@ -81,7 +97,7 @@ export default function DotField() {
       window.removeEventListener("pointermove", move)
       document.documentElement.removeEventListener("pointerleave", leave)
     }
-  }, [])
+  }, [theme])
 
   return <canvas ref={ref} aria-hidden="true" className="absolute inset-0 z-0 h-full w-full" />
 }

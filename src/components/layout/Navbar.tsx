@@ -5,6 +5,7 @@ import type { CSSProperties, MouseEvent } from "react"
 
 type NavbarProps = {
   onExploreClick?: () => void
+  onPrivacyClick?: () => void
 }
 
 const NAV_LINKS = [
@@ -60,7 +61,7 @@ function Shine({ visible }: { visible: boolean }) {
   )
 }
 
-export default function Navbar({ onExploreClick }: NavbarProps) {
+export default function Navbar({ onExploreClick, onPrivacyClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -258,6 +259,20 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
                 </a>
               ))}
               <div className="my-2 h-px bg-black/[0.07]" />
+              <a
+                href="/privacy"
+                tabIndex={mobileOpen ? 0 : -1}
+                onClick={(e) => {
+                  closeMenu()
+                  if (onPrivacyClick) {
+                    e.preventDefault()
+                    onPrivacyClick()
+                  }
+                }}
+                className="rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-950/[0.04] hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
+              >
+                Privacy Policy
+              </a>
               <a href="/signin" tabIndex={mobileOpen ? 0 : -1} onClick={closeMenu} className="rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-950/[0.04] hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] sm:hidden">
                 Sign in
               </a>
