@@ -1,10 +1,10 @@
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import type { User } from "firebase/auth"
 import {
   ArrowLeft, ArrowRight, Check, Database, FolderPlus, Layers3,
   Lightbulb, Plug, Sparkles, Triangle, Zap,
 } from "lucide-react"
-import { readUserData, saveUserData } from "../lib/onboarding"
+import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject, ShaftUserData } from "../lib/onboarding"
 
 interface OnboardingProps {
@@ -24,24 +24,29 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
+  const [cloudReady, setCloudReady] = useState(false)
+  useEffect(() => {
+    let active = true
+    loadUserData(user.uid).then((data) => {
+      if (!active) return
+      setSaved(data); setStep(Math.min(data.onboardingStep, 3))
+      setName(data.name || user.displayName || (user.email ? user.email.split("@")[0] : ""))
+      setRole(data.role); setCloudReady(true)
+    }).catch(() => {
+      if (!active) return
+      setError("Couldn't load your cloud profile. Check your connection and try again."); setCloudReady(true)
+    })
+    return () => { active = false }
+  }, [user.uid, user.displayName, user.email])
 
-  const persist = (patch: Partial<ShaftUserData>) => {
-    try {
-      const next = saveUserData(user.uid, patch)
-      setSaved(next)
-      setError("")
-      return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to save your setup on this device.")
-      return false
-    }
+  const persist = async (patch: Partial<ShaftUserData>) => {
+    try { const next = await saveUserData(user.uid, patch); setSaved(next); setError(""); return true }
+    catch (err) { setError(err instanceof Error ? err.message : "Unable to save your setup to the cloud. Check your connection and try again."); return false }
   }
 
-  const goToStep = (next: number) => {
-    if (persist({ onboardingStep: next })) setStep(next)
-  }
+  const goToStep = async (next: number) => { setBusy(true); if (await persist({ onboardingStep: next })) setStep(next); setBusy(false) }
 
-  const continueProfile = () => {
+  const continueProfile = async () => {
     if (!name.trim()) {
       setError("Add your name to continue.")
       return
@@ -50,10 +55,12 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
       setError("Choose the role that best describes you.")
       return
     }
-    if (persist({ name: name.trim(), role, onboardingStep: 2 })) setStep(2)
+    setBusy(true)
+    if (await persist({ name: name.trim(), role, onboardingStep: 2 })) setStep(2)
+    setBusy(false)
   }
 
-  const createFirstProject = () => {
+  const createFirstProject = async () => {
     if (!projectName.trim()) {
       setError("Give your project a name, or skip this step for now.")
       return
@@ -68,12 +75,14 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
       description: description.trim(),
       createdAt: new Date().toISOString(),
     }
-    if (persist({ projects: [...saved.projects, project], onboardingStep: 3 })) setStep(3)
+    setBusy(true)
+    if (await persist({ projects: [...saved.projects, project], onboardingStep: 3 })) setStep(3)
+    setBusy(false)
   }
 
   const finish = () => {
     setBusy(true)
-    const ok = persist({
+    const ok = await persist({
       name: name.trim() || saved.name,
       role: role || saved.role,
       onboardingCompleted: true,
@@ -89,6 +98,7 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
   }
   const firstName = (name || user.displayName || "there").trim().split(/\s+/)[0] || "there"
   const progress = [8, 34, 60, 84][step]
+  if (!cloudReady) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] text-sm text-slate-500">Loading your cloud setup…</main>
 
   return (
     <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
@@ -190,7 +200,7 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
             </div>
           )}
 
-          <p className="mt-12 border-t border-slate-200/80 pt-4 text-xs leading-5 text-slate-400">Your profile, onboarding progress and projects sync to your SHAFT account in the cloud.</p>
+          <p className="mt-12 border-t border-slate-200/80 pt-4 text-xs leading-5 text-slate-400">Your setup and projects are currently saved in this browser on this device. Cloud sync is not connected yet.</p>
         </section>
       </div>
     </main>
