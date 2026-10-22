@@ -1,6 +1,9 @@
 import Navbar from "../components/layout/Navbar"
 import DotField from "../components/landing/DotField"
 import Planet from "../components/landing/Planet"
+import Features from "../components/landing/Features"
+import Faq from "../components/landing/Faq"
+import LogoShowcase from "../components/landing/LogoShowcase"
 
 const PAGE_CSS = `
 @import url("https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600&display=swap");
@@ -10,24 +13,11 @@ const PAGE_CSS = `
   to   { opacity: 1; filter: none; transform: none; }
 }
 .shaft-spin { animation: shaftSpin 160s linear infinite; }
+@keyframes shaftRing { to { transform: translate(-50%, -50%) rotate(360deg); } }
+.shaft-ring { transform: translate(-50%, -50%); animation: shaftRing 3.5s linear infinite; }
 .shaft-rise { animation: shaftRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
-@media (prefers-reduced-motion: reduce) { .shaft-spin, .shaft-rise { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .shaft-spin, .shaft-rise, .shaft-ring { animation: none; } }
 `
-
-const FEATURES = [
-  {
-    title: "Every service, one dashboard",
-    body: "Connect GitHub and Vercel and see code, deployments and errors for a project in a single view.",
-  },
-  {
-    title: "AI that knows the project",
-    body: "Ask questions, run diagnostics and hand work between models without re-explaining your context.",
-  },
-  {
-    title: "Nothing slips by",
-    body: "Live monitoring flags broken builds, drifting dependencies and failing services as they happen.",
-  },
-]
 
 const display = { fontFamily: "Amaranth, sans-serif" }
 
@@ -57,16 +47,22 @@ export function Home() {
           >
             Shaft brings your code, hosting, deployments and AI tools into one place, so you can keep shipping instead of switching tabs.
           </p>
+          <span className="shaft-rise relative mt-10 inline-flex overflow-hidden rounded-full bg-slate-900/10 p-[2px]" style={{ animationDelay: "580ms" }}>
+            <span
+              aria-hidden="true"
+              className="shaft-ring absolute left-1/2 top-1/2 aspect-square w-[200%]"
+              style={{ background: "conic-gradient(from 0deg, rgba(67,181,255,0) 0%, #43B5FF 25%, #9A8CFF 50%, rgba(154,140,255,0) 70%)" }}
+            />
           <a
             href="/get-started"
-            className="shaft-rise group mt-10 inline-flex h-12 items-center gap-3 rounded-full bg-[#101319] pl-6 pr-2 text-[15px] font-semibold text-white shadow-[0_10px_30px_rgba(16,19,25,0.22)] transition-[transform,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#1b2230] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2"
-            style={{ animationDelay: "580ms" }}
+            className="group relative inline-flex h-12 items-center gap-3 rounded-full bg-[#101319] pl-6 pr-2 text-[15px] font-semibold text-white shadow-[0_10px_30px_rgba(16,19,25,0.22)] transition-[transform,background-color] duration-200 hover:-translate-y-0.5 hover:bg-[#1b2230] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2"
           >
             Start building
             <span aria-hidden="true" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">
               ↗
             </span>
           </a>
+          </span>
         </div>
 
         <nav aria-label="Legal" className="absolute bottom-16 left-6 z-10 flex gap-5 text-xs text-slate-500 sm:left-10">
@@ -78,7 +74,7 @@ export function Home() {
       <section
         id="product"
         className="relative z-10 -mt-12 overflow-hidden rounded-t-[48px] px-6 pb-20 pt-28 text-white sm:px-10"
-        style={{ background: "linear-gradient(180deg, #050B1F 0%, #07123A 55%, #0B2A8F 100%)" }}
+        style={{ background: "linear-gradient(180deg, #050B1F 0%, #07123A 100%)" }}
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div className="absolute -left-40 top-10 h-[480px] w-[480px] rounded-full bg-[#1E5BFF] opacity-50 blur-[120px]" />
@@ -90,17 +86,20 @@ export function Home() {
           <h2 className="max-w-[14ch] text-[clamp(36px,6vw,68px)] font-bold leading-[1.02] tracking-[-0.03em]" style={display}>
             Your whole project, one view.
           </h2>
-          <ul className="mt-16 divide-y divide-white/10 border-y border-white/10">
-            {FEATURES.map((item) => (
-              <li key={item.title} className="grid gap-3 py-8 md:grid-cols-[1fr_1.2fr] md:gap-12">
-                <h3 className="text-2xl font-bold tracking-[-0.01em]" style={display}>{item.title}</h3>
-                <p className="text-[16px] leading-relaxed text-white/60">{item.body}</p>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-14 text-xs text-white/40">© 2026 Shaft</p>
+          <Features />
         </div>
       </section>
+      <Faq />
+      <LogoShowcase />
+      <footer className="flex flex-col gap-4 bg-[#0A1F6B] px-6 pb-10 pt-6 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between sm:px-10">
+        <span className="text-lg font-bold text-white" style={display}>Shaft</span>
+        <nav aria-label="Footer" className="flex gap-6">
+          <a href="#product" className="transition-colors hover:text-white">Product</a>
+          <a href="/terms" className="transition-colors hover:text-white">Terms</a>
+          <a href="/privacy" className="transition-colors hover:text-white">Privacy</a>
+        </nav>
+        <span>© 2026 Shaft</span>
+      </footer>
     </main>
   )
 }
