@@ -67,7 +67,6 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
 
   const handleNavClick = (
     event: MouseEvent<HTMLAnchorElement>,
-    href: string,
     explore?: boolean
   ) => {
     closeMenu()
@@ -132,7 +131,7 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
               <a
                 key={item.href}
                 href={item.href}
-                onClick={(event) => handleNavClick(event, item.href, "explore" in item && item.explore)}
+                onClick={(event) => handleNavClick(event, "explore" in item && item.explore)}
                 className="group relative rounded-full px-4 py-2 text-[13px] font-medium text-slate-600 outline-none transition-colors duration-200 hover:text-[#101319] focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
               >
                 <span className="relative z-10">{item.label}</span>
