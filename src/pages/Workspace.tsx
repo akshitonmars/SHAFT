@@ -4,20 +4,21 @@ import { signOut } from "firebase/auth"
 import {
   ArrowRight, ArrowUpRight, Bot, Check, CircleHelp, Clock3, Code2,
   Database, FolderKanban, Gauge, LayoutDashboard, Lightbulb, LogOut,
-  Plus, Search, Settings, Sparkles, X,
+  Plus, Search, Settings, Sparkles, X, Github,
 } from "lucide-react"
 import { auth } from "../lib/firebase"
 import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
 
 interface WorkspaceProps { user: User }
-type View = "Overview" | "My Projects" | "Ideas" | "SHAFT AI" | "Database" | "Settings"
+type View = "Overview" | "My Projects" | "Ideas" | "SHAFT AI" | "Database" | "GitHub" | "Settings"
 const navItems: { label: View; icon: typeof LayoutDashboard }[] = [
   { label: "Overview", icon: LayoutDashboard },
   { label: "My Projects", icon: FolderKanban },
   { label: "Ideas", icon: Lightbulb },
   { label: "SHAFT AI", icon: Bot },
   { label: "Database", icon: Database },
+  { label: "GitHub", icon: Github },
   { label: "Settings", icon: Settings },
 ]
 
@@ -165,7 +166,7 @@ export function Workspace({ user }: WorkspaceProps) {
           <a href="/" aria-label="SHAFT home" className="flex items-center gap-2.5"><img src="/logo.png" alt="" className="h-9 w-9 object-contain" /><span className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span></a>
           <div className="mt-10 flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-xs font-bold text-[#346B65]">{initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{displayName}</p><p className="truncate text-xs text-slate-500">{data.role || "SHAFT workspace"}</p></div></div>
           <p className="mb-3 mt-9 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
-          <nav className="space-y-1" aria-label="Workspace navigation">{navItems.map((item) => { const Icon = item.icon; const active = view === item.label; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } setView(item.label); setQuery("") }} aria-current={active ? "page" : undefined} className={"flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition " + (active ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500 hover:bg-slate-100 hover:text-[#101319]")}><Icon size={17} /> {item.label}</button> })}</nav>
+          <nav className="space-y-1" aria-label="Workspace navigation">{navItems.map((item) => { const Icon = item.icon; const active = view === item.label; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } if (item.label === "GitHub") { window.location.assign("/github"); return } setView(item.label); setQuery("") }} aria-current={active ? "page" : undefined} className={"flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition " + (active ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500 hover:bg-slate-100 hover:text-[#101319]")}><Icon size={17} /> {item.label}</button> })}</nav>
           <div className="mt-auto rounded-2xl border border-[#D9ECE8] bg-[#F3FAF8] p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[#397D76]"><Sparkles size={17} /></span><p className="mt-3 text-sm font-semibold">Build beyond ideas.</p><p className="mt-1 text-xs leading-5 text-slate-500">Your projects, tools and next steps will meet here.</p></div>
           <button type="button" onClick={() => void leave()} disabled={signingOut} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-[#101319] disabled:opacity-50"><LogOut size={16} /> {signingOut ? "Signing out…" : "Sign out"}</button>
         </aside>
@@ -177,7 +178,7 @@ export function Workspace({ user }: WorkspaceProps) {
             <div className="ml-auto flex items-center gap-3"><span className="hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 sm:inline-flex sm:items-center sm:gap-2"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Cloud workspace</span><span className="grid h-9 w-9 place-items-center rounded-full bg-[#101319] text-xs font-semibold text-white" title={displayName}>{initials}</span><button type="button" onClick={() => void leave()} disabled={signingOut} aria-label="Sign out" className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:text-[#101319] disabled:opacity-50 lg:hidden"><LogOut size={16} /></button></div>
           </header>
 
-          <div className="border-b border-slate-200/70 bg-white/50 px-4 py-2 lg:hidden"><nav className="flex gap-1 overflow-x-auto" aria-label="Mobile workspace navigation">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } setView(item.label); setQuery("") }} className={"inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium " + (view === item.label ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500")}><Icon size={14} />{item.label}</button> })}</nav></div>
+          <div className="border-b border-slate-200/70 bg-white/50 px-4 py-2 lg:hidden"><nav className="flex gap-1 overflow-x-auto" aria-label="Mobile workspace navigation">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } if (item.label === "GitHub") { window.location.assign("/github"); return } setView(item.label); setQuery("") }} className={"inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium " + (view === item.label ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500")}><Icon size={14} />{item.label}</button> })}</nav></div>
 
           <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 sm:py-10">
             <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-[#E0EBE9] bg-[#F0F8F6] px-4 py-3 sm:flex-row sm:items-center"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#397D76]"><CircleHelp size={17} /></div><p className="text-xs leading-5 text-slate-600"><strong className="font-semibold text-[#245C55]">Cloud workspace:</strong> your profile and projects sync to your SHAFT account. Connect your tools below to bring your project stack into SHAFT.</p></div>
