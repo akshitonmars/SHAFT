@@ -34,6 +34,7 @@ export const App: React.FC = () => {
     window.addEventListener('hashchange', handlePopState);
 
     const handleDocumentClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
       const target = (e.target as HTMLElement).closest('a');
       if (!target) return;
 
