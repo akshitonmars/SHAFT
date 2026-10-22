@@ -11,12 +11,13 @@ import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
 
 interface WorkspaceProps { user: User }
-type View = "Overview" | "My Projects" | "Ideas" | "SHAFT AI" | "Settings"
+type View = "Overview" | "My Projects" | "Ideas" | "SHAFT AI" | "Database" | "Settings"
 const navItems: { label: View; icon: typeof LayoutDashboard }[] = [
   { label: "Overview", icon: LayoutDashboard },
   { label: "My Projects", icon: FolderKanban },
   { label: "Ideas", icon: Lightbulb },
   { label: "SHAFT AI", icon: Bot },
+  { label: "Database", icon: Database },
   { label: "Settings", icon: Settings },
 ]
 
@@ -164,7 +165,7 @@ export function Workspace({ user }: WorkspaceProps) {
           <a href="/" aria-label="SHAFT home" className="flex items-center gap-2.5"><img src="/logo.png" alt="" className="h-9 w-9 object-contain" /><span className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span></a>
           <div className="mt-10 flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-xs font-bold text-[#346B65]">{initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{displayName}</p><p className="truncate text-xs text-slate-500">{data.role || "SHAFT workspace"}</p></div></div>
           <p className="mb-3 mt-9 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
-          <nav className="space-y-1" aria-label="Workspace navigation">{navItems.map((item) => { const Icon = item.icon; const active = view === item.label; return <button key={item.label} type="button" onClick={() => { setView(item.label); setQuery("") }} aria-current={active ? "page" : undefined} className={"flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition " + (active ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500 hover:bg-slate-100 hover:text-[#101319]")}><Icon size={17} /> {item.label}</button> })}</nav>
+          <nav className="space-y-1" aria-label="Workspace navigation">{navItems.map((item) => { const Icon = item.icon; const active = view === item.label; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } setView(item.label); setQuery("") }} aria-current={active ? "page" : undefined} className={"flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition " + (active ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500 hover:bg-slate-100 hover:text-[#101319]")}><Icon size={17} /> {item.label}</button> })}</nav>
           <div className="mt-auto rounded-2xl border border-[#D9ECE8] bg-[#F3FAF8] p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[#397D76]"><Sparkles size={17} /></span><p className="mt-3 text-sm font-semibold">Build beyond ideas.</p><p className="mt-1 text-xs leading-5 text-slate-500">Your projects, tools and next steps will meet here.</p></div>
           <button type="button" onClick={() => void leave()} disabled={signingOut} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm text-slate-500 transition hover:bg-slate-100 hover:text-[#101319] disabled:opacity-50"><LogOut size={16} /> {signingOut ? "Signing out…" : "Sign out"}</button>
         </aside>
