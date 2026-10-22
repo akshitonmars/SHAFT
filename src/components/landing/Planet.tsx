@@ -76,6 +76,21 @@ export default function Planet() {
         style={{ background: "radial-gradient(circle, rgba(67,181,255,0.55), rgba(67,181,255,0) 65%)" }}
       />
       <div
+        className="absolute -inset-[2.5%] rounded-full blur-2xl"
+        style={{ border: "clamp(10px, 2vw, 26px) solid rgba(150,205,255,0.6)" }}
+      />
+      <div
+        className="absolute -inset-[1%] rounded-full blur-md"
+        style={{ border: "6px solid rgba(255,255,255,0.55)" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          WebkitMaskImage: "radial-gradient(circle, #000 66%, rgba(0,0,0,0) 71%)",
+          maskImage: "radial-gradient(circle, #000 66%, rgba(0,0,0,0) 71%)",
+        }}
+      >
+      <div
         className="shaft-spin absolute inset-0 rounded-full"
         style={{
           backgroundImage: `url(${texture})`,
@@ -89,9 +104,10 @@ export default function Planet() {
         style={{
           background: "radial-gradient(circle at 30% 28%, rgba(255,255,255,0.5), rgba(255,255,255,0) 38%)",
           boxShadow:
-            "inset -70px -70px 140px rgba(3,10,60,0.8), inset 10px 10px 40px rgba(255,255,255,0.35), 0 0 90px rgba(67,181,255,0.45)",
+            "inset -70px -70px 140px rgba(3,10,60,0.8), inset 10px 10px 40px rgba(255,255,255,0.35)",
         }}
       />
+      </div>
     </div>
   )
 }
