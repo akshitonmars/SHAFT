@@ -33,9 +33,14 @@ const NAV_STYLES = `
 .shaft-reveal { animation: shaftReveal 1.1s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
 .shaft-logo-blur { display: inline-flex; animation: shaftBlurIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.45s backwards; }
 .shaft-word-blur { display: inline-flex; animation: shaftBlurIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.6s backwards; }
+@keyframes shaftCtaBlurIn {
+  from { opacity: 0; filter: blur(8px); transform: translateY(-5px) scale(0.97); }
+  to   { opacity: 1; filter: blur(0); transform: translateY(0) scale(1); }
+}
+.shaft-cta-blur-in { animation: shaftCtaBlurIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .shaft-logo:hover .shaft-logo-hover { animation: shaftRefocus 0.8s ease; }
 @media (prefers-reduced-motion: reduce) {
-  .shaft-reveal, .shaft-logo-blur, .shaft-word-blur, .shaft-logo:hover .shaft-logo-hover { animation: none; }
+  .shaft-reveal, .shaft-logo-blur, .shaft-word-blur, .shaft-cta-blur-in, .shaft-logo:hover .shaft-logo-hover { animation: none; }
 }
 `
 
@@ -219,7 +224,7 @@ export default function Navbar({ onExploreClick, onPrivacyClick }: NavbarProps) 
               Sign in
             </a>
 {scrolled && (
-              <a href="/get-started" className="group relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#101319] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[#202630] hover:shadow-[0_6px_18px_rgba(16,19,25,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]">
+              <a href="/get-started" className="shaft-cta-blur-in group relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#101319] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[#202630] hover:shadow-[0_6px_18px_rgba(16,19,25,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]">
                 <span>Start building</span>
                 <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
               </a>
