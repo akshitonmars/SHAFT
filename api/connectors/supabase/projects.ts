@@ -43,7 +43,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       connected: true,
       projects: projects.map((project: any) => ({
-        id: project.id,
+        id: project.ref || project.id,
         name: project.name,
         region: project.region,
         status: project.status,
