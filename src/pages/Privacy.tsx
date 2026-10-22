@@ -8,14 +8,16 @@ interface PrivacyProps {
 
 const PAGE_CSS = [
   '@import url("https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600&display=swap");',
-  '.privacy-page { font-family: "Inter", system-ui, sans-serif; color: #F4F5F2; background: #050B1F; }',
-  '.privacy-page .privacy-display { font-family: "Amaranth", sans-serif; }',
-  '.privacy-page .privacy-body { font-family: "Inter", system-ui, sans-serif; }',
-  '.privacy-page .privacy-section { border-top: 1px solid rgba(255,255,255,.14); padding-top: 1.5rem; }',
-  '.privacy-page .privacy-copy { max-width: 68ch; color: rgba(244,245,242,.76); font-size: 15px; line-height: 1.85; }',
-  '.privacy-page .privacy-link { color: #78CFC4; text-decoration: underline; text-decoration-color: rgba(120,207,196,.45); text-underline-offset: 4px; }',
-  '@media (prefers-reduced-motion: reduce) { .privacy-page * { scroll-behavior: auto !important; } }',
-].join("\n")
+  '.legal-page { font-family: "Inter", system-ui, sans-serif; color: #151B26; background: #F5F7FB; }',
+  '.legal-page .legal-display { font-family: "Amaranth", sans-serif; color: #101319; }',
+  '.legal-page .legal-body { font-family: "Inter", system-ui, sans-serif; }',
+  '.legal-page .legal-section { border-top: 1px solid rgba(16,19,25,.12); padding-top: 1.5rem; }',
+  '.legal-page .legal-copy { max-width: 68ch; color: rgba(21,27,38,.78); font-size: 15px; line-height: 1.9; }',
+  '.legal-page .legal-link { color: #167DA8; text-decoration: underline; text-decoration-color: rgba(22,125,168,.4); text-underline-offset: 4px; }',
+  '.legal-page .legal-mark { position: absolute; z-index: 1; left: 50%; top: 48%; width: min(78vw, 860px); max-height: 82vh; object-fit: contain; transform: translate(-50%,-50%); opacity: .045; mix-blend-mode: multiply; animation: legalMarkDrift 38s ease-in-out infinite alternate; }',
+  '@keyframes legalMarkDrift { from { transform: translate(-52%,-48%) rotate(-4deg) scale(.97); opacity: .028; } to { transform: translate(-48%,-52%) rotate(4deg) scale(1.035); opacity: .06; } }',
+  '@media (prefers-reduced-motion: reduce) { .legal-page .legal-mark { animation: none; transform: translate(-50%,-50%); } .legal-page * { scroll-behavior: auto !important; } }',
+].join("\\n")
 
 const sections = [
   {
@@ -36,7 +38,7 @@ const sections = [
     title: "How information is used",
     paragraphs: [
       "Technical information is used where needed to serve the website, understand and fix technical errors, maintain security, and prevent misuse. Information you send directly is used to respond to your request.",
-      "SHAFT does not sell personal information. The current public landing page does not provide account creation, project connections, or an AI prompt interface. If those features are introduced, this policy must be updated to explain the relevant data flows before they are made available.",
+      "SHAFT does not sell personal information collected through its current public website. The current public landing page does not provide account creation, project connections, or an AI prompt interface. If those features are introduced, this policy must be updated to explain the relevant data flows before they are made available.",
     ],
   },
   {
@@ -64,7 +66,7 @@ const sections = [
     title: "Your choices and rights",
     paragraphs: [
       "Depending on where you live and the law that applies, you may have rights to request access to, correction of, deletion of, or restrictions on the use of personal information. You may also be able to object to certain processing or raise a concern with your local data-protection authority.",
-      "If you have a privacy request, use SHAFT's verified official contact channel when one is provided. We should verify the appropriate privacy contact before the product begins collecting account or project data.",
+      "For a privacy request, use the verified official contact channel published by SHAFT, when available. Privacy requests should be reviewed in light of the laws that apply to the person and the processing involved.",
     ],
   },
   {
@@ -96,12 +98,13 @@ export const Privacy: React.FC<PrivacyProps> = ({ onNavigateHome }) => {
   }
 
   return (
-    <main className="privacy-page relative min-h-screen overflow-hidden selection:bg-[#78CFC4]/25 selection:text-white">
+    <main className="legal-page privacy-page relative min-h-screen overflow-hidden selection:bg-[#43B5FF]/20 selection:text-[#101319]">
       <style>{PAGE_CSS}</style>
 
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0">
-        <DotField theme="cosmic" />
-        <div className="absolute inset-0 bg-[#050B1F]/35" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <DotField theme="light" />
+        <div className="absolute inset-0 bg-[#F5F7FB]/55" />
+        <img src="/logo.png" alt="" className="legal-mark" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-[900px] px-6 pb-24 pt-8 sm:px-10 sm:pt-12">
@@ -114,55 +117,46 @@ export const Privacy: React.FC<PrivacyProps> = ({ onNavigateHome }) => {
                 handleBackHome()
               }
             }}
-            className="privacy-display text-xl font-bold lowercase tracking-[-0.03em] text-white transition-opacity hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#78CFC4]"
+            className="legal-display rounded-sm text-xl font-bold lowercase tracking-[-0.03em] transition-opacity hover:opacity-65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#167DA8]"
           >
             shaft
           </a>
-          <span className="privacy-body text-xs text-white/45">Legal · 01</span>
+          <nav aria-label="Legal pages" className="legal-body flex items-center gap-4 text-xs text-slate-500 sm:gap-6">
+            <a href="/terms" className="transition-colors hover:text-[#101319]">Terms</a>
+            <span aria-current="page" className="text-[#167DA8]">Privacy</span>
+          </nav>
         </header>
 
         <section className="mb-16">
-          <p className="privacy-body mb-5 text-xs uppercase tracking-[0.2em] text-[#78CFC4]">
-            Privacy
+          <p className="legal-body mb-5 text-xs uppercase tracking-[0.2em] text-[#167DA8]">
+            Legal
           </p>
-          <h1 className="privacy-display max-w-[12ch] text-[clamp(44px,8vw,76px)] font-bold leading-[0.98] tracking-[-0.035em]">
+          <h1 className="legal-display max-w-[12ch] text-[clamp(44px,8vw,76px)] font-bold leading-[0.98] tracking-[-0.035em]">
             <TypewriterText
               text="Privacy policy."
               speed="fast"
               showCursor={false}
-              className="privacy-display"
+              className="legal-display"
             />
           </h1>
-          <p className="privacy-copy privacy-body mt-7">
+          <p className="legal-copy legal-body mt-7">
             A plain-language explanation of how information is handled on SHAFT's current public website.
           </p>
-          <p className="privacy-body mt-5 text-xs text-white/45">
+          <p className="legal-body mt-5 text-xs text-slate-500">
             Effective date: October 22, 2026
           </p>
         </section>
 
         <div className="space-y-12">
-          {sections.map((section, index) => (
-            <section className="privacy-section" key={section.title}>
-              <h2 className="privacy-display mb-4 text-[clamp(22px,3vw,30px)] font-bold leading-tight tracking-[-0.02em]">
-                <TypewriterText
-                  text={section.title}
-                  speed="fast"
-                  delay={index * 90}
-                  showCursor={false}
-                  className="privacy-display"
-                />
+          {sections.map((section) => (
+            <section className="legal-section" key={section.title}>
+              <h2 className="legal-display mb-4 text-[clamp(22px,3vw,30px)] font-bold leading-tight tracking-[-0.02em]">
+                {section.title}
               </h2>
               <div className="space-y-4">
                 {section.paragraphs.map((paragraph, paragraphIndex) => (
-                  <p className="privacy-copy privacy-body" key={paragraphIndex}>
-                    <TypewriterText
-                      text={paragraph}
-                      speed="fast"
-                      delay={index * 100 + paragraphIndex * 120}
-                      showCursor={false}
-                      className="privacy-body"
-                    />
+                  <p className="legal-copy legal-body" key={paragraphIndex}>
+                    {paragraph}
                   </p>
                 ))}
               </div>
@@ -170,22 +164,14 @@ export const Privacy: React.FC<PrivacyProps> = ({ onNavigateHome }) => {
           ))}
         </div>
 
-        <footer className="mt-16 border-t border-white/15 pt-6">
-          <p className="privacy-body text-xs leading-relaxed text-white/45">
+        <footer className="mt-16 border-t border-slate-900/15 pt-6">
+          <p className="legal-body text-xs leading-relaxed text-slate-500">
             Last updated: October 22, 2026. This notice describes the current public website, not every feature planned for future SHAFT releases.
           </p>
-          <a
-            href="/"
-            onClick={(event) => {
-              if (onNavigateHome) {
-                event.preventDefault()
-                handleBackHome()
-              }
-            }}
-            className="privacy-body mt-6 inline-block text-sm text-[#78CFC4] underline decoration-[#78CFC4]/40 underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#78CFC4]"
-          >
-            Return to SHAFT
-          </a>
+          <nav aria-label="Legal footer" className="legal-body mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm">
+            <a href="/" onClick={(event) => { if (onNavigateHome) { event.preventDefault(); handleBackHome() } }} className="legal-link">Return to SHAFT</a>
+            <a href="/terms" className="legal-link">Terms &amp; Conditions</a>
+          </nav>
         </footer>
       </div>
     </main>
