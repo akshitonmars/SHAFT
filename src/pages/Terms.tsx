@@ -17,7 +17,7 @@ const PAGE_CSS = [
   '.legal-page .legal-mark { position: absolute; z-index: 1; left: 50%; top: 48%; width: min(78vw, 860px); max-height: 82vh; object-fit: contain; transform: translate(-50%,-50%); opacity: .045; mix-blend-mode: multiply; animation: legalMarkDrift 38s ease-in-out infinite alternate; }',
   '@keyframes legalMarkDrift { from { transform: translate(-52%,-48%) rotate(-4deg) scale(.97); opacity: .028; } to { transform: translate(-48%,-52%) rotate(4deg) scale(1.035); opacity: .06; } }',
   '@media (prefers-reduced-motion: reduce) { .legal-page .legal-mark { animation: none; transform: translate(-50%,-50%); } .legal-page * { scroll-behavior: auto !important; } }',
-].join("\\n")
+].join("\n")
 
 const sections = [
   {
