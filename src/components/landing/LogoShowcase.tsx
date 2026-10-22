@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react"
+import { SplitText } from "./motion"
 
 const CSS = `
 @keyframes lgIn { from { opacity: 0; transform: scaleY(0.15) translateY(40px); filter: blur(14px); } to { opacity: 1; transform: none; filter: none; } }
@@ -102,7 +103,7 @@ export default function LogoShowcase() {
       <div className="relative mx-auto flex max-w-[760px] flex-col items-center">
         <LogoMark animate live={live} className="h-[min(48vh,420px)] w-auto" />
         <h2 className="mt-12 text-[clamp(36px,6vw,72px)] font-bold leading-[1.02] tracking-[-0.03em]" style={{ fontFamily: "Amaranth, sans-serif" }}>
-          Ready to build beyond ideas?
+          <SplitText text="Ready to build beyond ideas?" mode="focus" delay={0.6} />
         </h2>
         <p className="mt-5 max-w-[34rem] text-[17px] leading-relaxed text-white/70">
           Bring your repos, deployments and AI tools into one place and keep every project moving.
