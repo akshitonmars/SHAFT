@@ -36,12 +36,25 @@ const styles = `
   backdrop-filter: blur(26px) saturate(175%); -webkit-backdrop-filter: blur(26px) saturate(175%);
 }
 .shaftNavBrand {
-  display: inline-flex; align-items: center; justify-self: start; gap: 10px; min-width: 0;
+  display: inline-flex; align-items: center; justify-self: start; gap: 11px; min-width: 0;
   color: var(--sn-ink); text-decoration: none; -webkit-tap-highlight-color: transparent;
 }
-.shaftNavLogo { width: 38px; height: 38px; display: block; object-fit: contain; flex: 0 0 auto; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
-.shaftNavBrand:hover .shaftNavLogo { transform: rotate(-4deg) scale(1.045); }
-.shaftNavWordmark { font-size: 27px; line-height: 1; letter-spacing: -.8px; font-weight: 700; }
+.shaftNavLogoFrame {
+  position: relative; isolation: isolate; display: grid; place-items: center; width: 42px; height: 42px;
+  flex: 0 0 auto; overflow: hidden; border: 1px solid rgba(52,160,240,.13); border-radius: 14px;
+  background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(235,246,255,.84));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 3px 10px rgba(38,145,222,.055);
+  transition: border-radius .35s ease, box-shadow .35s ease, transform .35s cubic-bezier(.2,.8,.2,1);
+}
+.shaftNavLogoFrame::after {
+  content: ''; position: absolute; z-index: -1; inset: 25% 10%; border-radius: 50%;
+  background: rgba(44,159,244,.22); filter: blur(13px); opacity: .55; transition: opacity .3s ease;
+}
+.shaftNavLogo { width: 27px; height: 32px; display: block; object-fit: contain; flex: 0 0 auto; transition: transform .45s cubic-bezier(.2,.8,.2,1); }
+.shaftNavBrand:hover .shaftNavLogoFrame { transform: translateY(-1px) rotate(-2deg); border-radius: 12px; box-shadow: 0 6px 16px rgba(38,145,222,.12); }
+.shaftNavBrand:hover .shaftNavLogo { transform: scale(1.07); }
+.shaftNavBrand:hover .shaftNavLogoFrame::after { opacity: .9; }
+.shaftNavWordmark { font-size: 26px; line-height: 1; letter-spacing: -.65px; font-weight: 700; }
 .shaftNavLinks { display: flex; align-items: center; justify-content: center; gap: clamp(21px, 3vw, 40px); }
 .shaftNavLink {
   position: relative; display: inline-flex; align-items: center; min-height: 44px; color: #687688;
@@ -59,14 +72,25 @@ const styles = `
 .shaftNavSignIn:hover { color: var(--sn-ink); }
 .shaftNavCta {
   position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center;
-  gap: 13px; min-height: 46px; padding: 0 18px; overflow: hidden; border: 1px solid #182737;
-  border-radius: 14px; background: #182737; color: #fff; font-size: 14px; line-height: 1;
-  text-decoration: none; white-space: nowrap;
+  gap: 13px; min-height: 44px; padding: 0 17px; overflow: hidden; border: 1px solid rgba(255,255,255,.12);
+  border-radius: 13px; background: linear-gradient(115deg, #1c3043, #152331 70%, #203b50);
+  color: #fff; font-size: 14px; line-height: 1; text-decoration: none; white-space: nowrap;
+  box-shadow: 0 3px 9px rgba(21,35,49,.08), inset 0 1px 0 rgba(255,255,255,.10);
   transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease;
 }
 .shaftNavCta::before {
-  content: ''; position: absolute; z-index: -1; inset: 0;
-  background: linear-gradient(110deg, #203a51, #172331 58%, #294a64); opacity: 0; transition: opacity .25s ease;
+  content: ''; position: absolute; z-index: -1; top: -40%; bottom: -40%; left: -55%; width: 38%;
+  transform: skewX(-22deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+  animation: shaftNavSheen 5.8s ease-in-out infinite;
+}
+.shaftNavCta::after {
+  content: ''; position: absolute; z-index: -2; inset: 0;
+  background: linear-gradient(110deg, #294c66, #172331 58%, #2d668a); opacity: 0; transition: opacity .3s ease;
+}
+@keyframes shaftNavSheen {
+  0%, 65%, 100% { left: -55%; opacity: 0; }
+  70% { opacity: 1; }
+  90% { left: 125%; opacity: .8; }
 }
 .shaftNavCta:hover { transform: translateY(-1px); border-color: #274860; box-shadow: 0 7px 20px rgba(23,35,49,.15); }
 .shaftNavCta:hover::before { opacity: 1; }
@@ -91,11 +115,13 @@ const styles = `
     backdrop-filter: blur(22px) saturate(165%); -webkit-backdrop-filter: blur(22px) saturate(165%);
     grid-template-columns: 1fr auto;
   }
-  .shaftNavLogo { width: 34px; height: 34px; }
-  .shaftNavWordmark { font-size: 25px; }
+  .shaftNavLogoFrame { width: 36px; height: 36px; border-radius: 12px; }
+  .shaftNavLogo { width: 23px; height: 28px; }
+  .shaftNavBrand { gap: 9px; }
+  .shaftNavWordmark { font-size: 23px; letter-spacing: -.5px; }
   .shaftNavLinks, .shaftNavSignIn { display: none; }
   .shaftNavRight { gap: 9px; }
-  .shaftNavCta { min-height: 42px; padding-inline: 13px; gap: 8px; border-radius: 12px; font-size: 13px; }
+  .shaftNavCta { min-height: 40px; padding-inline: 12px; gap: 7px; border-radius: 12px; font-size: 13px; }
   .shaftNavToggle { display: flex; flex: 0 0 auto; }
   .shaftNavMobileBackdrop {
     display: block; position: fixed; z-index: -1; inset: -12px 0 0; width: 100%; height: 100dvh;
@@ -121,9 +147,17 @@ const styles = `
   }
 }
 @media (max-width: 390px) {
-  .shaftNavWordmark { font-size: 23px; }
-  .shaftNavCta { padding-inline: 10px; }
-  .shaftNavCtaLabel { max-width: 75px; overflow: hidden; text-overflow: ellipsis; }
+  .shaftNavRoot { padding-inline: 10px; }
+  .shaftNavShell, .shaftNavShell.isScrolled { padding-left: 10px; gap: 6px; }
+  .shaftNavBrand { gap: 7px; }
+  .shaftNavLogoFrame { width: 32px; height: 32px; border-radius: 10px; }
+  .shaftNavLogo { width: 21px; height: 25px; }
+  .shaftNavWordmark { font-size: 21px; letter-spacing: -.4px; }
+  .shaftNavRight { gap: 6px; }
+  .shaftNavCta { min-height: 38px; padding-inline: 9px; gap: 5px; font-size: 12px; }
+  .shaftNavCtaLabel { max-width: none; }
+  .shaftNavArrow { font-size: 15px; }
+  .shaftNavToggle { width: 38px; height: 38px; border-radius: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shaftNavRoot *, .shaftNavRoot *::before, .shaftNavRoot *::after {
@@ -174,7 +208,9 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         >
           <a className="shaftNavBrand" href="/" aria-label="SHAFT home" onClick={closeMenu}>
-            <img className="shaftNavLogo" src="/logo.png" alt="" />
+            <span className="shaftNavLogoFrame">
+              <img className="shaftNavLogo" src="/logo.png" alt="" />
+            </span>
             <span className="shaftNavWordmark">Shaft</span>
           </a>
 
