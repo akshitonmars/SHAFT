@@ -177,7 +177,7 @@ export default function Navbar({ onExploreClick }: NavbarProps) {
                 key={item.href}
                 href={item.href}
                 tabIndex={mobileOpen ? 0 : -1}
-                onClick={(event) => handleNavClick(event, item.href, "explore" in item && item.explore)}
+                onClick={(event) => handleNavClick(event, "explore" in item && item.explore)}
                 className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-950/[0.04] hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
               >
                 {item.label}
