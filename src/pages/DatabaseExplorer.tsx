@@ -13,9 +13,7 @@ export function DatabaseExplorer({ user }: { user: User }) {
   const [table, setTable] = useState("")
   const [columns, setColumns] = useState<ColumnInfo[]>([])
   const [rows, setRows] = useState<Record<string, unknown>[]>([])
-  const [recordText, setRecordText] = useState('{
-  
-}')
+  const [recordText, setRecordText] = useState("{\\n  \\n}")
   const [showInsert, setShowInsert] = useState(false)
   const [busy, setBusy] = useState(true)
   const [saving, setSaving] = useState(false)
