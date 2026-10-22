@@ -1,16 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Home } from './pages/Home';
 import { Privacy } from './pages/Privacy';
+import { Terms } from './pages/Terms';
 
 function getInitialPath(): string {
   if (typeof window === 'undefined') return '/';
   const pathname = window.location.pathname;
-  if (pathname === '/privacy' || pathname.startsWith('/privacy')) {
+  if (pathname === '/privacy' || pathname.startsWith('/privacy/')) {
     return '/privacy';
+  }
+  if (pathname === '/terms' || pathname.startsWith('/terms/')) {
+    return '/terms';
   }
   const hash = window.location.hash;
   if (hash === '#/privacy' || hash === '#privacy') {
     return '/privacy';
+  }
+  if (hash === '#/terms' || hash === '#terms') {
+    return '/terms';
   }
   return '/';
 }
@@ -26,7 +33,6 @@ export const App: React.FC = () => {
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('hashchange', handlePopState);
 
-    // Global interceptor for internal links like <a href="/privacy"> and <a href="/">
     const handleDocumentClick = (e: MouseEvent) => {
       const target = (e.target as HTMLElement).closest('a');
       if (!target) return;
@@ -34,13 +40,18 @@ export const App: React.FC = () => {
       const href = target.getAttribute('href');
       if (!href) return;
 
-      if (href === '/privacy' || href === '#/privacy') {
+      if (href === '/privacy' || href === '#/privacy' || href === '#privacy') {
         e.preventDefault();
         window.history.pushState({}, '', '/privacy');
         setCurrentPath('/privacy');
         window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (href === '/terms' || href === '#/terms' || href === '#terms') {
+        e.preventDefault();
+        window.history.pushState({}, '', '/terms');
+        setCurrentPath('/terms');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (href === '/' || href === '/#product' || href === '#product') {
-        if (currentPath === '/privacy') {
+        if (currentPath === '/privacy' || currentPath === '/terms') {
           e.preventDefault();
           window.history.pushState({}, '', '/');
           setCurrentPath('/');
@@ -66,6 +77,10 @@ export const App: React.FC = () => {
 
   if (currentPath === '/privacy') {
     return <Privacy onNavigateHome={() => navigateTo('/')} />;
+  }
+
+  if (currentPath === '/terms') {
+    return <Terms onNavigateHome={() => navigateTo('/')} />;
   }
 
   return <Home onPrivacyClick={() => navigateTo('/privacy')} />;
