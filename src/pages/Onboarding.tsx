@@ -80,7 +80,7 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
     setBusy(false)
   }
 
-  const finish = () => {
+  const finish = async () => {
     setBusy(true)
     const ok = await persist({
       name: name.trim() || saved.name,
