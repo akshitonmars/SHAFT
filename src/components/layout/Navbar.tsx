@@ -1,314 +1,265 @@
-import { useEffect, useState, type MouseEvent } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-type NavbarProps = { onExploreClick?: () => void };
+"use client"
+
+import { useEffect, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
 
 const NAV_LINKS = [
-  { label: "Platform", href: "#platform" },
-  { label: "Workflow", href: "#workflow" },
-  { label: "Explore", href: "#explore", explore: true },
-];
+  { label: "Product", href: "#product" },
+  { label: "Solutions", href: "#solutions" },
+  { label: "Resources", href: "#resources" },
+  { label: "Pricing", href: "#pricing" },
+] as const
 
-const styles = `
-@import url('https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600;700&display=swap');
-
-.shaftNavRoot {
-  --sn-ink: #152332;
-  --sn-muted: #647386;
-  --sn-blue: #259cf0;
-  --sn-border: rgba(24, 42, 60, .085);
-  position: fixed; z-index: 1000; inset: 18px 0 auto; padding-inline: 24px;
-  pointer-events: none; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased;
-}
-.shaftNavRoot *, .shaftNavRoot *::before, .shaftNavRoot *::after { box-sizing: border-box; }
-.shaftNavShell {
-  position: relative; isolation: isolate; width: min(1080px, 100%); min-height: 68px; margin: 0 auto;
-  padding: 8px 9px 8px 23px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 24px;
-  border: 1px solid rgba(255,255,255,.86); border-radius: 19px;
-  background: rgba(250,252,254,.79); box-shadow: 0 8px 32px rgba(20,39,57,.045), inset 0 1px 0 rgba(255,255,255,.96);
-  -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
-  pointer-events: auto; transition: min-height .35s cubic-bezier(.2,.8,.2,1), background .3s ease,
-  border-color .3s ease, box-shadow .3s ease, border-radius .3s ease;
-}
-.shaftNavShell::before {
-  content: ''; position: absolute; z-index: -1; inset: 0; border-radius: inherit; padding: 1px;
-  background: linear-gradient(115deg, rgba(255,255,255,.95), rgba(154,197,229,.2) 46%, rgba(255,255,255,.7));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
-}
-.shaftNavShell.isScrolled {
-  min-height: 62px; background: rgba(252,253,255,.91); border-color: rgba(24,42,60,.1);
-  border-radius: 17px; box-shadow: 0 12px 38px rgba(20,39,57,.085), 0 2px 6px rgba(20,39,57,.025);
-  -webkit-backdrop-filter: blur(28px) saturate(175%); backdrop-filter: blur(28px) saturate(175%);
-}
-.shaftNavBrand {
-  position: relative; display: inline-flex; align-items: center; justify-self: start; gap: 8px;
-  min-width: 0; color: var(--sn-ink); text-decoration: none; -webkit-tap-highlight-color: transparent;
-}
-.shaftNavWordmark {
-  font-family: 'Amaranth', sans-serif; font-size: 29px; line-height: .95; font-weight: 700;
-  letter-spacing: -.9px; transform: translateY(-1px); transition: letter-spacing .3s ease, color .3s ease;
-}
-.shaftNavBrand:hover .shaftNavWordmark { letter-spacing: -.55px; }
-.shaftNavBrandAccent {
-  width: 5px; height: 5px; margin: 0 0 0 1px; border-radius: 50%; background: var(--sn-blue);
-  box-shadow: 0 0 0 0 rgba(37,156,240,.25); animation: shaftNavPulse 3.2s ease-out infinite;
-}
-@keyframes shaftNavPulse {
-  0%, 65%, 100% { box-shadow: 0 0 0 0 rgba(37,156,240,0); }
-  78% { box-shadow: 0 0 0 4px rgba(37,156,240,.11); }
-}
-.shaftNavLinks {
-  position: relative; display: flex; align-items: center; justify-content: center; gap: 3px;
-  padding: 4px; border: 1px solid rgba(24,42,60,.045); border-radius: 13px;
-  background: rgba(237,242,247,.58);
-}
-.shaftNavLink {
-  position: relative; display: inline-flex; align-items: center; justify-content: center;
-  min-height: 35px; padding: 0 14px; border-radius: 9px; color: #667587; font-size: 12.5px;
-  font-weight: 550; letter-spacing: -.12px; text-decoration: none; white-space: nowrap;
-  transition: color .2s ease, background .25s ease, box-shadow .25s ease;
-}
-.shaftNavLink::after {
-  content: ''; position: absolute; bottom: 5px; left: 14px; right: 14px; height: 1px;
-  border-radius: 2px; background: var(--sn-blue); transform: scaleX(0); transform-origin: center;
-  transition: transform .24s cubic-bezier(.2,.8,.2,1);
-}
-.shaftNavLink:hover, .shaftNavLink:focus-visible { color: var(--sn-ink); background: rgba(255,255,255,.82); box-shadow: 0 1px 3px rgba(24,42,60,.04); }
-.shaftNavLink:hover::after, .shaftNavLink:focus-visible::after { transform: scaleX(1); }
-.shaftNavRight { display: flex; align-items: center; justify-content: end; gap: 17px; }
-.shaftNavSignIn {
-  color: #536477; font-size: 12.5px; font-weight: 550; text-decoration: none; white-space: nowrap;
-  transition: color .2s ease;
-}
-.shaftNavSignIn:hover { color: var(--sn-ink); }
-.shaftNavCta {
-  position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center;
-  gap: 13px; min-height: 43px; padding: 0 16px; overflow: hidden; border: 1px solid #1a2d40;
-  border-radius: 12px; background: #1a2d40; color: #fff; font-size: 12.5px; font-weight: 600;
-  letter-spacing: -.12px; text-decoration: none; white-space: nowrap;
-  box-shadow: 0 2px 5px rgba(21,35,49,.08), inset 0 1px 0 rgba(255,255,255,.1);
-  transition: transform .24s cubic-bezier(.2,.8,.2,1), box-shadow .24s ease, background .24s ease;
-}
-.shaftNavCta::before {
-  content: ''; position: absolute; z-index: -1; top: -50%; bottom: -50%; left: -70%; width: 42%;
-  transform: skewX(-22deg); background: linear-gradient(90deg, transparent, rgba(255,255,255,.24), transparent);
-  animation: shaftNavSheen 6.5s ease-in-out infinite;
-}
-.shaftNavCta::after {
-  content: ''; position: absolute; z-index: -2; inset: 0;
-  background: linear-gradient(115deg, #24445d, #1a2d40 55%, #2b6385); opacity: 0; transition: opacity .3s ease;
-}
-@keyframes shaftNavSheen {
-  0%, 70%, 100% { left: -70%; opacity: 0; }
-  75% { opacity: 1; }
-  93% { left: 135%; opacity: .75; }
-}
-.shaftNavCta:hover { transform: translateY(-1px); box-shadow: 0 7px 18px rgba(21,35,49,.16); }
-.shaftNavCta:hover::after { opacity: 1; }
-.shaftNavArrow { display: inline-block; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 400; transition: transform .22s ease; }
-.shaftNavCta:hover .shaftNavArrow { transform: translate(2px, -2px); }
-.shaftNavToggle {
-  display: none; min-width: 43px; min-height: 43px; padding: 0 10px; align-items: center; justify-content: center;
-  flex-direction: column; gap: 5px; border: 1px solid var(--sn-border); border-radius: 12px;
-  background: rgba(255,255,255,.72); cursor: pointer;
-}
-.shaftNavToggle span { width: 17px; height: 1.5px; display: block; border-radius: 2px; background: var(--sn-ink); transition: transform .25s ease, width .25s ease; }
-.shaftNavToggle span:last-child { width: 12px; margin-left: 5px; }
-.shaftNavToggle:hover span:last-child { width: 17px; margin-left: 0; }
-.shaftNavToggle.isOpen span:first-child { transform: translateY(3.25px) rotate(45deg); }
-.shaftNavToggle.isOpen span:last-child { width: 17px; margin-left: 0; transform: translateY(-3.25px) rotate(-45deg); }
-.shaftNavMobileBackdrop, .shaftNavMobilePanel { display: none; }
-.shaftNavRoot a:focus-visible, .shaftNavToggle:focus-visible { outline: 2px solid var(--sn-blue); outline-offset: 4px; }
-
-@media (max-width: 820px) {
-  .shaftNavRoot { inset-block-start: 12px; padding-inline: 14px; }
-  .shaftNavShell, .shaftNavShell.isScrolled {
-    min-height: 61px; padding: 7px 8px 7px 16px; gap: 8px; border-radius: 17px;
-    grid-template-columns: 1fr auto; border-color: rgba(24,42,60,.08);
-    background: rgba(250,252,254,.88); box-shadow: 0 8px 26px rgba(20,39,57,.065);
-    -webkit-backdrop-filter: blur(24px) saturate(165%); backdrop-filter: blur(24px) saturate(165%);
-  }
-  .shaftNavWordmark { font-size: 26px; }
-  .shaftNavLinks, .shaftNavSignIn { display: none; }
-  .shaftNavRight { gap: 8px; }
-  .shaftNavCta { min-height: 41px; padding-inline: 13px; gap: 8px; border-radius: 11px; font-size: 12px; }
-  .shaftNavToggle { display: flex; min-width: 41px; min-height: 41px; }
-  .shaftNavMobileBackdrop {
-    display: block; position: fixed; z-index: -1; inset: -12px 0 0; width: 100%; height: 100dvh;
-    border: 0; background: rgba(19,32,45,.12); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-    pointer-events: auto; cursor: default;
-  }
-  .shaftNavMobilePanel {
-    position: absolute; top: calc(100% + 9px); left: 0; right: 0; display: flex; flex-direction: column;
-    gap: 4px; padding: 9px; border: 1px solid rgba(24,42,60,.09); border-radius: 17px;
-    background: rgba(252,253,255,.97); box-shadow: 0 22px 54px rgba(19,35,51,.15);
-    -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px); pointer-events: auto;
-  }
-  .shaftNavMobileEyebrow { padding: 9px 12px 6px; color: #8a98a7; font-size: 9px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
-  .shaftNavMobileLink {
-    display: flex; justify-content: space-between; align-items: center; min-height: 48px; padding: 0 13px;
-    border-radius: 10px; color: #344457; font-size: 14px; font-weight: 550; text-decoration: none;
-    transition: background .18s ease, color .18s ease, padding .18s ease;
-  }
-  .shaftNavMobileLink:hover { padding-left: 16px; background: #f1f6fa; color: var(--sn-ink); }
-  .shaftNavMobileLink span { color: #8592a0; font-size: 15px; }
-  .shaftNavMobileCta {
-    display: flex; align-items: center; justify-content: space-between; margin-top: 6px; min-height: 46px;
-    padding: 0 14px; border-radius: 11px; background: #1a2d40; color: white; font-size: 13px;
-    font-weight: 600; text-decoration: none;
-  }
-}
-@media (max-width: 390px) {
-  .shaftNavRoot { padding-inline: 10px; }
-  .shaftNavShell, .shaftNavShell.isScrolled { padding-left: 12px; gap: 6px; }
-  .shaftNavWordmark { font-size: 24px; }
-  .shaftNavRight { gap: 6px; }
-  .shaftNavCta { min-height: 39px; padding-inline: 10px; gap: 5px; font-size: 11.5px; }
-  .shaftNavArrow { font-size: 14px; }
-  .shaftNavToggle { min-width: 39px; min-height: 39px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .shaftNavRoot *, .shaftNavRoot *::before, .shaftNavRoot *::after {
-    scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
-}
-`;
-
-export default function Navbar({ onExploreClick }: NavbarProps) {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const reduceMotion = useReducedMotion();
+export default function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    const updateScroll = () => setScrolled(window.scrollY > 10);
-    updateScroll();
-    window.addEventListener("scroll", updateScroll, { passive: true });
-    return () => window.removeEventListener("scroll", updateScroll);
-  }, []);
+    let ticking = false
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
+    const updateScroll = () => {
+      if (ticking) return
+      ticking = true
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = previousOverflow; };
-  }, [menuOpen]);
+      window.requestAnimationFrame(() => {
+        const scrollable =
+          document.documentElement.scrollHeight - window.innerHeight
 
-  const closeMenu = () => setMenuOpen(false);
-  const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>, explore?: boolean) => {
-    if (explore && onExploreClick) {
-      event.preventDefault();
-      onExploreClick();
+        setScrolled(window.scrollY > 12)
+        setScrollProgress(
+          scrollable > 0
+            ? Math.min(window.scrollY / scrollable, 1)
+            : 0
+        )
+
+        ticking = false
+      })
     }
-    closeMenu();
-  };
+
+    updateScroll()
+    window.addEventListener("scroll", updateScroll, { passive: true })
+    window.addEventListener("resize", updateScroll)
+
+    return () => {
+      window.removeEventListener("scroll", updateScroll)
+      window.removeEventListener("resize", updateScroll)
+    }
+  }, [])
+
+  // Close the mobile menu with Escape and prevent background scrolling.
+  useEffect(() => {
+    if (!mobileOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false)
+    }
+
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) setMobileOpen(false)
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("resize", handleResize)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [mobileOpen])
+
+  const closeMenu = () => setMobileOpen(false)
 
   return (
     <>
-      <style>{styles}</style>
-      <header className="shaftNavRoot">
-        <motion.nav
-          className={`shaftNavShell${scrolled ? " isScrolled" : ""}`}
-          aria-label="Main navigation"
-          initial={reduceMotion ? false : { opacity: 0, y: -10, scale: 0.99 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <a className="shaftNavBrand" href="/" aria-label="SHAFT home" onClick={closeMenu}>
-            <span className="shaftNavWordmark">Shaft</span>
-            <span className="shaftNavBrandAccent" aria-hidden="true" />
-          </a>
+      {/* Genuine page scroll progress */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-x-0 top-0 z-[100] h-[2px] origin-left bg-gradient-to-r from-[#43B5FF] via-[#648EFF] to-[#9A8CFF]"
+        style={{
+          transform: `scaleX(${scrollProgress})`,
+        }}
+      />
 
-          <div className="shaftNavLinks">
-            {NAV_LINKS.map((link) => (
-              <a
-                className="shaftNavLink"
-                href={link.href}
-                key={link.label}
-                onClick={(event) => handleLinkClick(event, link.explore)}
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation menu"
+          onClick={closeMenu}
+          className="fixed inset-0 z-40 cursor-default bg-slate-950/15 backdrop-blur-[2px] lg:hidden"
+        />
+      )}
+
+      <header
+        className={[
+          "fixed left-1/2 top-3 z-50 w-[calc(100%-24px)] max-w-[1180px]",
+          "-translate-x-1/2 rounded-[22px] border",
+          "transition-[background-color,border-color,box-shadow] duration-300",
+          scrolled
+            ? "border-black/[0.08] bg-white/90 shadow-[0_12px_40px_rgba(15,23,42,0.09)] backdrop-blur-2xl"
+            : "border-black/[0.06] bg-white/70 shadow-[0_4px_20px_rgba(15,23,42,0.035)] backdrop-blur-xl",
+        ].join(" ")}
+      >
+        <div className="flex h-[64px] items-center justify-between px-3 sm:px-5 lg:px-6">
+          {/* Brand */}
+          <Link
+            href="/"
+            onClick={closeMenu}
+            aria-label="SHAFT home"
+            className="group flex shrink-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
+          >
+            <Image
+              src="/logo.png"
+              alt=""
+              width={34}
+              height={34}
+              priority
+              className="h-[30px] w-[30px] object-contain transition-transform duration-300 group-hover:scale-105"
+            />
+
+            <span
+              className="text-[24px] font-bold leading-none tracking-[-0.055em] text-[#101319]"
+              style={{ fontFamily: "Amaranth, sans-serif" }}
+            >
+              SHAFT
+            </span>
+
+            <span
+              aria-hidden="true"
+              className="ml-[-4px] mt-[-14px] h-[5px] w-[5px] rounded-full bg-[#43B5FF] shadow-[0_0_10px_rgba(67,181,255,0.4)]"
+            />
+          </Link>
+
+          {/* Desktop navigation */}
+          <nav
+            aria-label="Main navigation"
+            className="hidden items-center gap-1 rounded-full border border-black/[0.045] bg-black/[0.025] p-1 lg:flex"
+          >
+            {NAV_LINKS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group relative rounded-full px-4 py-2 text-[13px] font-medium text-slate-600 outline-none transition-colors duration-200 hover:text-[#101319] focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
               >
-                {link.label}
-              </a>
+                <span className="relative z-10">{item.label}</span>
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-full bg-white opacity-0 shadow-[0_1px_4px_rgba(15,23,42,0.08)] transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                />
+              </Link>
             ))}
-          </div>
+          </nav>
 
-          <div className="shaftNavRight">
-            <a className="shaftNavSignIn" href="/login">Sign in</a>
-            <motion.a
-              className="shaftNavCta"
-              href="#get-started"
-              whileHover={reduceMotion ? undefined : { y: -1 }}
-              whileTap={reduceMotion ? undefined : { scale: 0.98 }}
+          {/* Actions */}
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <Link
+              href="/signin"
+              className="hidden rounded-lg px-2 py-2 text-[13px] font-medium text-slate-600 transition-colors hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] sm:inline-flex"
+            >
+              Sign in
+            </Link>
+
+            <Link
+              href="/get-started"
+              className="group relative inline-flex h-10 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#101319] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[#202630] hover:shadow-[0_6px_18px_rgba(16,19,25,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]"
             >
               <span>Start building</span>
-              <span className="shaftNavArrow" aria-hidden="true">↗</span>
-            </motion.a>
+              <span
+                aria-hidden="true"
+                className="inline-block transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+              >
+                ↗
+              </span>
+            </Link>
+
+            {/* Custom menu icon — no icon library */}
             <button
               type="button"
-              className={`shaftNavToggle${menuOpen ? " isOpen" : ""}`}
-              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-              aria-expanded={menuOpen}
-              aria-controls="shaftNavMobilePanel"
-              onClick={() => setMenuOpen((open) => !open)}
+              onClick={() => setMobileOpen((open) => !open)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              aria-controls="shaft-mobile-menu"
+              className="grid h-10 w-10 place-items-center rounded-full border border-black/[0.07] bg-white/70 transition-colors hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] lg:hidden"
             >
-              <span /><span />
+              <span className="flex w-[17px] flex-col items-center gap-[5px]">
+                <span
+                  className={`h-[1.5px] w-full rounded-full bg-[#101319] transition-transform duration-200 ${
+                    mobileOpen ? "translate-y-[3.25px] rotate-45" : ""
+                  }`}
+                />
+                <span
+                  className={`h-[1.5px] w-full rounded-full bg-[#101319] transition-all duration-200 ${
+                    mobileOpen ? "scale-x-0 opacity-0" : ""
+                  }`}
+                />
+                <span
+                  className={`h-[1.5px] w-full rounded-full bg-[#101319] transition-transform duration-200 ${
+                    mobileOpen ? "-translate-y-[9.75px] -rotate-45" : ""
+                  }`}
+                />
+              </span>
             </button>
           </div>
-        </motion.nav>
+        </div>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <>
-              <motion.button
-                type="button"
-                className="shaftNavMobileBackdrop"
-                aria-label="Close navigation menu"
+        {/* Mobile dropdown */}
+        <div
+          id="shaft-mobile-menu"
+          aria-hidden={!mobileOpen}
+          className={`absolute left-0 right-0 top-[calc(100%+9px)] rounded-[22px] border border-black/[0.07] bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.12)] backdrop-blur-2xl transition-[opacity,transform,visibility] duration-200 lg:hidden ${
+            mobileOpen
+              ? "visible translate-y-0 opacity-100"
+              : "invisible -translate-y-2 opacity-0"
+          }`}
+        >
+          <nav aria-label="Mobile navigation" className="flex flex-col gap-1">
+            {NAV_LINKS.map((item, index) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                tabIndex={mobileOpen ? 0 : -1}
                 onClick={closeMenu}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.18 }}
-              />
-              <motion.div
-                id="shaftNavMobilePanel"
-                className="shaftNavMobilePanel"
-                initial={reduceMotion ? false : { opacity: 0, y: -7, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -7, scale: 0.985 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-950/[0.04] hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
               >
-                <div className="shaftNavMobileEyebrow">Navigate SHAFT</div>
-                {NAV_LINKS.map((link, index) => (
-                  <motion.a
-                    className="shaftNavMobileLink"
-                    href={link.href}
-                    key={link.label}
-                    onClick={(event) => handleLinkClick(event, link.explore)}
-                    initial={reduceMotion ? false : { opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: reduceMotion ? 0 : index * 0.035, duration: 0.18 }}
-                  >
-                    {link.label}<span aria-hidden="true">↗</span>
-                  </motion.a>
-                ))}
-                <a className="shaftNavMobileCta" href="#get-started" onClick={closeMenu}>
-                  Start building <span aria-hidden="true">↗</span>
-                </a>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
+                {item.label}
+                <span
+                  aria-hidden="true"
+                  className="text-slate-400"
+                >
+                  0{index + 1}
+                </span>
+              </Link>
+            ))}
+
+            <div className="my-2 h-px bg-black/[0.07]" />
+
+            <Link
+              href="/signin"
+              tabIndex={mobileOpen ? 0 : -1}
+              onClick={closeMenu}
+              className="rounded-xl px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-950/[0.04] hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] sm:hidden"
+            >
+              Sign in
+            </Link>
+
+            <Link
+              href="/get-started"
+              tabIndex={mobileOpen ? 0 : -1}
+              onClick={closeMenu}
+              className="mt-1 flex h-11 items-center justify-center gap-2 rounded-xl bg-[#101319] text-sm font-semibold text-white transition-colors hover:bg-[#202630] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2"
+            >
+              Start building <span aria-hidden="true">↗</span>
+            </Link>
+          </nav>
+        </div>
       </header>
     </>
-  );
+  )
 }
