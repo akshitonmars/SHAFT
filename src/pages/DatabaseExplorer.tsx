@@ -24,10 +24,10 @@ export function DatabaseExplorer({ user }: { user: User }) {
 
   const request = async (url: string, init?: RequestInit) => {
     const token = await user.getIdToken()
-    const response = await fetch(url, {
-      ...init,
-      headers: { Authorization: "Bearer " + token, ...(init?.body ? { "Content-Type": "application/json" } : {}), ...init?.headers },
-    })
+    const headers = new Headers(init?.headers)
+    headers.set("Authorization", "Bearer " + token)
+    if (init?.body) headers.set("Content-Type", "application/json")
+    const response = await fetch(url, { ...init, headers })
     const result = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(result.error || "The database request failed.")
     return result
