@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Navbar } from '../components/layout/Navbar';
+import Navbar from '../components/layout/Navbar';
 import { Hero } from '../components/sections/Hero';
 
 export const Home: React.FC = () => {
