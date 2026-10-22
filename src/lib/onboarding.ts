@@ -1,10 +1,7 @@
-export interface ShaftProject {
-  id: string
-  name: string
-  description: string
-  createdAt: string
-}
+import { doc, getDoc, setDoc } from "firebase/firestore"
+import { db } from "./firebase"
 
+export interface ShaftProject { id: string; name: string; description: string; createdAt: string }
 export interface ShaftUserData {
   name: string
   role: string
@@ -13,48 +10,47 @@ export interface ShaftUserData {
   onboardingStep: number
   completedAt?: string
 }
-
 const keyFor = (uid: string) => "shaft:v1:user:" + uid
-const emptyData = (): ShaftUserData => ({
-  name: "",
-  role: "",
-  projects: [],
-  onboardingCompleted: false,
-  onboardingStep: 0,
-})
-
-export function readUserData(uid: string): ShaftUserData {
-  if (typeof window === "undefined") return emptyData()
+const emptyData = (): ShaftUserData => ({ name: "", role: "", projects: [], onboardingCompleted: false, onboardingStep: 0 })
+function normalize(value: Partial<ShaftUserData> = {}): ShaftUserData {
+  return {
+    ...emptyData(), ...value,
+    name: typeof value.name === "string" ? value.name : "",
+    role: typeof value.role === "string" ? value.role : "",
+    projects: Array.isArray(value.projects) ? value.projects : [],
+    onboardingCompleted: value.onboardingCompleted === true,
+    onboardingStep: typeof value.onboardingStep === "number" ? Math.min(4, Math.max(0, value.onboardingStep)) : 0,
+  }
+}
+function cache(uid: string, data: ShaftUserData) {
+  try { window.localStorage.setItem(keyFor(uid), JSON.stringify(data)) } catch { /* Cache is optional; Firestore is canonical. */ }
+}
+function cached(uid: string): ShaftUserData {
   try {
     const raw = window.localStorage.getItem(keyFor(uid))
-    if (!raw) return emptyData()
-    const value = JSON.parse(raw) as Partial<ShaftUserData>
-    return {
-      ...emptyData(),
-      ...value,
-      name: typeof value.name === "string" ? value.name : "",
-      role: typeof value.role === "string" ? value.role : "",
-      projects: Array.isArray(value.projects) ? value.projects : [],
-      onboardingCompleted: value.onboardingCompleted === true,
-      onboardingStep: typeof value.onboardingStep === "number"
-        ? Math.min(4, Math.max(0, value.onboardingStep))
-        : 0,
-    }
-  } catch {
-    return emptyData()
-  }
+    return raw ? normalize(JSON.parse(raw) as Partial<ShaftUserData>) : emptyData()
+  } catch { return emptyData() }
 }
-
-export function saveUserData(uid: string, patch: Partial<ShaftUserData>): ShaftUserData {
-  const next = { ...readUserData(uid), ...patch }
-  try {
-    window.localStorage.setItem(keyFor(uid), JSON.stringify(next))
-  } catch {
-    throw new Error("SHAFT couldn't save this on your device. Check your browser storage settings and try again.")
+export async function loadUserData(uid: string): Promise<ShaftUserData> {
+  const ref = doc(db, "users", uid)
+  const snapshot = await getDoc(ref)
+  if (snapshot.exists()) {
+    const data = normalize(snapshot.data() as Partial<ShaftUserData>)
+    cache(uid, data)
+    return data
   }
+  const legacy = cached(uid)
+  await setDoc(ref, { ...legacy, updatedAt: new Date().toISOString() })
+  cache(uid, legacy)
+  return legacy
+}
+export async function saveUserData(uid: string, patch: Partial<ShaftUserData>): Promise<ShaftUserData> {
+  const current = await loadUserData(uid)
+  const next = normalize({ ...current, ...patch })
+  await setDoc(doc(db, "users", uid), { ...next, updatedAt: new Date().toISOString() })
+  cache(uid, next)
   return next
 }
-
-export function hasCompletedOnboarding(uid: string): boolean {
-  return readUserData(uid).onboardingCompleted
+export async function hasCompletedOnboarding(uid: string): Promise<boolean> {
+  return (await loadUserData(uid)).onboardingCompleted
 }
