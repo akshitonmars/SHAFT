@@ -1,589 +1,654 @@
-"use client";
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Sparkles,
+  ArrowUpRight,
+  ChevronDown,
+  Layers,
+  Cpu,
+  ShieldCheck,
+  Zap,
+  Globe,
+  Command,
+  Menu,
+  X,
+  Code2,
+  Workflow,
+  Activity,
+  Lock,
+  Terminal,
+  LucideIcon,
+} from 'lucide-react';
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
+interface MegaItem {
+  title: string;
+  desc: string;
+  icon: LucideIcon;
+  badge: string;
+  accent: string;
+}
 
-export type NavLink = { label: string; href: string };
+interface NavLinkItem {
+  id: string;
+  label: string;
+  href?: string;
+  hasMega: boolean;
+  badge?: string;
+  featured?: {
+    tag: string;
+    title: string;
+    subtitle: string;
+    metric: string;
+    cta: string;
+  };
+  items?: MegaItem[];
+}
 
-export type NavbarProps = {
-  links?: NavLink[];
-  cta?: NavLink;
-  brand?: string;
-  logoSrc?: string;
-};
-
-const DEFAULT_LINKS: NavLink[] = [
-  { label: "Features", href: "#features" },
-  { label: "How it works", href: "#how-it-works" },
-  { label: "Integrations", href: "#integrations" },
-  { label: "FAQ", href: "#faq" },
+const NAV_LINKS: NavLinkItem[] = [
+  {
+    id: 'product',
+    label: 'Product',
+    hasMega: true,
+    featured: {
+      tag: 'SHAFT CORE v2.4',
+      title: 'Deterministic Execution Engine',
+      subtitle: 'Zero-latency state synchronization with optical edge routing.',
+      metric: '99.999% Uptime SLA',
+      cta: 'Explore Core Engine',
+    },
+    items: [
+      {
+        title: 'Parallel Pipelines',
+        desc: 'Sub-millisecond task sharding across edge nodes',
+        icon: Workflow,
+        badge: 'FAST',
+        accent: 'from-sky-400 to-blue-600',
+      },
+      {
+        title: 'Neural Mesh API',
+        desc: 'Unified GraphQL & gRPC streaming gateway',
+        icon: Cpu,
+        badge: 'NEW',
+        accent: 'from-indigo-400 to-violet-600',
+      },
+      {
+        title: 'Zero-Trust Vault',
+        desc: 'Hardware-isolated secrets & ephemeral keys',
+        icon: ShieldCheck,
+        badge: 'SOC2',
+        accent: 'from-blue-400 to-cyan-500',
+      },
+      {
+        title: 'Real-Time Telemetry',
+        desc: 'High-cardinality traces with instant replay',
+        icon: Activity,
+        badge: 'LIVE',
+        accent: 'from-sky-500 to-indigo-500',
+      },
+    ],
+  },
+  {
+    id: 'architecture',
+    label: 'Architecture',
+    hasMega: true,
+    featured: {
+      tag: 'GLOBAL FABRIC',
+      title: '320+ Anycast Edge Regions',
+      subtitle: 'Automatic cold-start elimination and regional failover.',
+      metric: '< 11ms Global P99',
+      cta: 'View Network Map',
+    },
+    items: [
+      {
+        title: 'Distributed State',
+        desc: 'CRDT-backed memory replicas at the edge',
+        icon: Layers,
+        badge: 'CORE',
+        accent: 'from-blue-500 to-sky-400',
+      },
+      {
+        title: 'Edge Runtime SDK',
+        desc: 'TypeScript, Rust & WebAssembly native targets',
+        icon: Code2,
+        badge: 'WASM',
+        accent: 'from-indigo-500 to-blue-500',
+      },
+      {
+        title: 'Global Mesh Routing',
+        desc: 'Smart BGP path optimization in real time',
+        icon: Globe,
+        badge: 'ANYCAST',
+        accent: 'from-sky-400 to-cyan-500',
+      },
+      {
+        title: 'Enclave Compute',
+        desc: 'Confidential computing with verifiable attestation',
+        icon: Lock,
+        badge: 'E2EE',
+        accent: 'from-violet-500 to-indigo-500',
+      },
+    ],
+  },
+  { id: 'benchmarks', label: 'Benchmarks', href: '#benchmarks', hasMega: false },
+  { id: 'pricing', label: 'Pricing', href: '#pricing', hasMega: false },
+  { id: 'changelog', label: 'Changelog', href: '#changelog', badge: 'v2.4', hasMega: false },
 ];
 
-const DEFAULT_CTA: NavLink = { label: "Get started", href: "#get-started" };
-
-const CSS = `
-@import url("https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&display=swap");
-
-/* Smooth anchor scrolling + room for the floating bar */
-@media (prefers-reduced-motion: no-preference) {
-  html { scroll-behavior: smooth; }
-}
-:where(section[id]) { scroll-margin-top: 96px; }
-
-.sx-nav {
-  --sx-ink: #22304a;
-  --sx-muted: #5b6a82;
-  --sx-accent: #0a76e0;
-  --sx-accent-bright: #0a8cff;
-  --sx-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --sx-spring: cubic-bezier(0.34, 1.3, 0.64, 1);
-
-  position: fixed;
-  inset: 0 0 auto 0;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
-  font-family: "Amaranth", system-ui, -apple-system, "Segoe UI", sans-serif;
-  color: var(--sx-ink);
-  pointer-events: none;
-  transition: padding-top 0.5s var(--sx-ease);
-}
-.sx-nav > * { pointer-events: auto; }
-.sx-nav[data-scrolled="true"] { padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
-
-/* ---------- Bar ---------- */
-.sx-nav__bar {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  width: calc(100% - 28px);
-  max-width: 980px;
-  padding: 9px 10px 9px 20px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  -webkit-backdrop-filter: blur(20px) saturate(1.7);
-  backdrop-filter: blur(20px) saturate(1.7);
-  box-shadow:
-    0 0 0 1px rgba(28, 52, 92, 0.05),
-    0 10px 30px -14px rgba(28, 70, 140, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  transition:
-    max-width 0.6s var(--sx-ease),
-    padding 0.5s var(--sx-ease),
-    background-color 0.4s ease,
-    box-shadow 0.4s ease;
-  /* Played once on load. No fill-mode "forwards" on purpose: a lingering
-     filter would stop backdrop-filter from working. */
-  animation: sx-nav-in 0.9s var(--sx-ease) 0.1s backwards;
-}
-.sx-nav[data-scrolled="true"] .sx-nav__bar {
-  max-width: 860px;
-  padding: 6px 8px 6px 18px;
-  background: rgba(255, 255, 255, 0.8);
-  box-shadow:
-    0 0 0 1px rgba(28, 52, 92, 0.07),
-    0 16px 40px -16px rgba(28, 70, 140, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
-}
-
-@keyframes sx-nav-in {
-  from {
-    opacity: 0;
-    transform: translateY(-16px) scale(0.98);
-    filter: blur(10px);
-  }
-}
-
-/* ---------- Brand ---------- */
-.sx-nav__brand {
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  border-radius: 12px;
-}
-.sx-nav__logo {
-  display: block;
-  height: 28px;
-  width: auto;
-  transition: height 0.5s var(--sx-ease);
-}
-.sx-nav[data-scrolled="true"] .sx-nav__logo { height: 24px; }
-
-/* ---------- Links + sliding pill ---------- */
-.sx-nav__links { position: relative; }
-.sx-nav__links ul {
-  display: flex;
-  gap: 2px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.sx-nav__link {
-  position: relative;
-  z-index: 1;
-  display: block;
-  padding: 9px 16px;
-  border-radius: 999px;
-  font-size: 15px;
-  letter-spacing: 0.01em;
-  color: var(--sx-muted);
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.25s ease;
-}
-.sx-nav__link:hover,
-.sx-nav__link:focus-visible { color: var(--sx-ink); }
-.sx-nav__link[aria-current="true"] { color: var(--sx-accent); }
-
-.sx-nav__pill {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: var(--w, 0px);
-  transform: translateX(var(--x, 0px));
-  border-radius: 999px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease, background-color 0.3s ease, box-shadow 0.3s ease;
-}
-.sx-nav__pill[data-show="true"] {
-  opacity: 1;
-  transition:
-    transform 0.5s var(--sx-spring),
-    width 0.5s var(--sx-spring),
-    opacity 0.25s ease,
-    background-color 0.3s ease,
-    box-shadow 0.3s ease;
-}
-.sx-nav__pill[data-state="hover"] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(238, 246, 255, 0.92));
-  box-shadow:
-    0 1px 2px rgba(30, 60, 110, 0.08),
-    0 8px 18px -10px rgba(10, 140, 255, 0.4),
-    inset 0 0 0 1px rgba(10, 140, 255, 0.1);
-}
-.sx-nav__pill[data-state="active"] {
-  background: rgba(10, 140, 255, 0.09);
-  box-shadow: inset 0 0 0 1px rgba(10, 140, 255, 0.14);
-}
-
-/* ---------- CTA ---------- */
-.sx-nav__cta {
-  position: relative;
-  justify-self: end;
-  overflow: hidden;
-  padding: 10px 22px;
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: #fff;
-  text-decoration: none;
-  white-space: nowrap;
-  background: linear-gradient(180deg, #3aa0f8 0%, var(--sx-accent) 100%);
-  box-shadow:
-    0 8px 18px -8px rgba(10, 118, 224, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
-  transform: translate(var(--mx, 0px), var(--my, 0px));
-  transition: transform 0.35s var(--sx-ease), box-shadow 0.3s ease;
-}
-.sx-nav__cta span { position: relative; z-index: 1; }
-.sx-nav__cta::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.5) 50%, transparent 70%);
-  transform: translateX(-120%);
-  transition: transform 0.7s var(--sx-ease);
-}
-.sx-nav__cta:hover {
-  box-shadow:
-    0 12px 24px -8px rgba(10, 118, 224, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5);
-}
-.sx-nav__cta:hover::after { transform: translateX(120%); }
-.sx-nav__cta:active { transform: translate(var(--mx, 0px), var(--my, 0px)) scale(0.97); }
-
-/* ---------- Scroll progress hairline ---------- */
-.sx-nav__progress {
-  position: absolute;
-  left: 22px;
-  right: 22px;
-  bottom: 0;
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #a9d8ff, var(--sx-accent-bright));
-  transform: scaleX(0);
-  transform-origin: left center;
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-/* ---------- Mobile toggle ---------- */
-.sx-nav__toggle {
-  display: none;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: rgba(10, 140, 255, 0.08);
-  cursor: pointer;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  transition: background-color 0.25s ease;
-}
-.sx-nav__toggle:hover { background: rgba(10, 140, 255, 0.14); }
-.sx-nav__toggle span {
-  display: block;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--sx-ink);
-  transition: transform 0.4s var(--sx-ease), width 0.3s ease, opacity 0.2s ease;
-}
-.sx-nav__toggle span:nth-child(1) { width: 18px; }
-.sx-nav__toggle span:nth-child(2) { width: 12px; }
-.sx-nav__toggle span:nth-child(3) { width: 15px; }
-.sx-nav[data-open="true"] .sx-nav__toggle span:nth-child(1) { width: 18px; transform: translateY(6px) rotate(45deg); }
-.sx-nav[data-open="true"] .sx-nav__toggle span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-.sx-nav[data-open="true"] .sx-nav__toggle span:nth-child(3) { width: 18px; transform: translateY(-6px) rotate(-45deg); }
-
-/* ---------- Mobile panel ---------- */
-.sx-nav__panel {
-  display: none;
-  width: calc(100% - 28px);
-  max-width: 980px;
-  margin-top: 8px;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: 26px;
-  background: rgba(255, 255, 255, 0.82);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
-  backdrop-filter: blur(22px) saturate(1.7);
-  box-shadow:
-    0 0 0 1px rgba(28, 52, 92, 0.06),
-    0 20px 40px -18px rgba(28, 70, 140, 0.3);
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(-10px) scale(0.98);
-  transform-origin: top center;
-  filter: blur(8px);
-  transition:
-    opacity 0.35s ease,
-    transform 0.45s var(--sx-ease),
-    filter 0.35s ease,
-    visibility 0s linear 0.45s;
-}
-.sx-nav[data-open="true"] .sx-nav__panel {
-  opacity: 1;
-  visibility: visible;
-  transform: none;
-  filter: none;
-  transition-delay: 0s;
-}
-.sx-nav__panel ul { margin: 0; padding: 0; list-style: none; }
-.sx-nav__panel li {
-  opacity: 0;
-  transform: translateY(6px);
-  filter: blur(6px);
-  transition: opacity 0.4s ease, transform 0.5s var(--sx-ease), filter 0.4s ease;
-}
-.sx-nav[data-open="true"] .sx-nav__panel li {
-  opacity: 1;
-  transform: none;
-  filter: none;
-  transition-delay: calc(var(--i, 0) * 50ms + 120ms);
-}
-.sx-nav__panel a {
-  display: block;
-  padding: 14px 16px;
-  border-radius: 16px;
-  font-size: 17px;
-  color: var(--sx-ink);
-  text-decoration: none;
-  transition: background-color 0.25s ease, color 0.25s ease;
-}
-.sx-nav__panel a:hover { background: rgba(10, 140, 255, 0.08); }
-.sx-nav__panel a[aria-current="true"] { color: var(--sx-accent); }
-.sx-nav__panel .sx-nav__panel-cta {
-  margin-top: 6px;
-  text-align: center;
-  font-weight: 700;
-  color: #fff;
-  background: linear-gradient(180deg, #3aa0f8 0%, var(--sx-accent) 100%);
-  box-shadow: 0 8px 18px -8px rgba(10, 118, 224, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-.sx-nav__panel .sx-nav__panel-cta:hover { background: linear-gradient(180deg, #3aa0f8 0%, var(--sx-accent) 100%); }
-
-/* ---------- Focus ---------- */
-.sx-nav a:focus-visible,
-.sx-nav button:focus-visible {
-  outline: 2px solid var(--sx-accent-bright);
-  outline-offset: 2px;
-}
-
-/* ---------- Responsive ---------- */
-@media (max-width: 820px) {
-  .sx-nav__bar { grid-template-columns: 1fr auto; padding: 7px 8px 7px 16px; }
-  .sx-nav[data-scrolled="true"] .sx-nav__bar { padding: 6px 8px 6px 16px; }
-  .sx-nav[data-scrolled="true"] .sx-nav__panel { max-width: 860px; }
-  .sx-nav__links,
-  .sx-nav__cta { display: none; }
-  .sx-nav__toggle { display: flex; }
-  .sx-nav__panel { display: block; }
-}
-
-/* ---------- Fallbacks ---------- */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .sx-nav__bar { background: rgba(255, 255, 255, 0.95); }
-  .sx-nav__panel { background: rgba(255, 255, 255, 0.98); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sx-nav,
-  .sx-nav *,
-  .sx-nav *::after {
-    animation: none !important;
-    transition-duration: 0.01ms !important;
-    transition-delay: 0s !important;
-  }
-}
-`;
-
-const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-export default function Navbar({
-  links = DEFAULT_LINKS,
-  cta = DEFAULT_CTA,
-  brand = "Shaft",
-  logoSrc = "/logo.png",
-}: NavbarProps) {
-  const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [active, setActive] = useState<string | null>(null); // href of the section in view
-  const [hovered, setHovered] = useState<number | null>(null); // index of hovered/focused link
-  const [pill, setPill] = useState({ x: 0, w: 0 });
-  const [showPill, setShowPill] = useState(false);
-
-  const headerRef = useRef<HTMLElement>(null);
-  const linkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const progressRef = useRef<HTMLSpanElement>(null);
-
-  const linkKey = links.map((l) => l.href).join("|");
-  const activeIndex = links.findIndex((l) => l.href === active);
-  const targetIndex = hovered !== null ? hovered : activeIndex >= 0 ? activeIndex : null;
-
-  /* Scroll state + progress line (one rAF-throttled listener) */
-  useEffect(() => {
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const y = window.scrollY;
-      setScrolled(y > 24);
-      if (y < 80) setActive(null);
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      const p = max > 0 ? Math.min(y / max, 1) : 0;
-      if (progressRef.current) progressRef.current.style.transform = `scaleX(${p})`;
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(update);
-    };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  /* Scrollspy: highlight the link for the section in view */
-  useEffect(() => {
-    const els = links
-      .map((l) => l.href)
-      .filter((h) => h.startsWith("#") && h.length > 1)
-      .map((h) => document.getElementById(h.slice(1)))
-      .filter((el): el is HTMLElement => el !== null);
-    if (!els.length) return undefined;
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) setActive(`#${e.target.id}`);
-        });
-      },
-      { rootMargin: "-40% 0px -55% 0px" }
-    );
-    els.forEach((el) => io.observe(el));
-    return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [linkKey]);
-
-  /* Sliding pill: measure the target link */
-  useLayoutEffect(() => {
-    if (targetIndex === null) {
-      setShowPill(false);
-      return undefined;
-    }
-    const measure = () => {
-      const el = linkRefs.current[targetIndex];
-      if (el) setPill({ x: el.offsetLeft, w: el.offsetWidth });
-    };
-    measure();
-    // Reveal on the next frame so the first appearance fades in place
-    // instead of sliding across from its previous position.
-    const raf = requestAnimationFrame(() => setShowPill(true));
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
-    window.addEventListener("resize", measure);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", measure);
-    };
-  }, [targetIndex, scrolled]);
-
-  /* Mobile menu: Escape, outside click, and close when the viewport widens */
-  useEffect(() => {
-    if (!open) return undefined;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    const onPointer = (e: PointerEvent) => {
-      if (headerRef.current && !headerRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onResize = () => {
-      if (window.innerWidth > 820) setOpen(false);
-    };
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("pointerdown", onPointer);
-    window.addEventListener("resize", onResize);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointer);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [open]);
-
-  /* Magnetic CTA */
-  const onCtaMove = (e: ReactMouseEvent<HTMLAnchorElement>) => {
-    if (prefersReducedMotion()) return;
-    const r = e.currentTarget.getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width / 2)) * 0.18;
-    const dy = (e.clientY - (r.top + r.height / 2)) * 0.28;
-    e.currentTarget.style.setProperty("--mx", `${dx.toFixed(1)}px`);
-    e.currentTarget.style.setProperty("--my", `${dy.toFixed(1)}px`);
-  };
-  const onCtaLeave = (e: ReactMouseEvent<HTMLAnchorElement>) => {
-    e.currentTarget.style.setProperty("--mx", "0px");
-    e.currentTarget.style.setProperty("--my", "0px");
-  };
-
-  const pillState = hovered !== null && hovered !== activeIndex ? "hover" : "active";
+const ShaftLogoMark: React.FC<{ className?: string }> = ({ className = 'w-8 h-8' }) => {
+  const [imgError, setImgError] = useState(false);
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <header
-        ref={headerRef}
-        className="sx-nav"
-        data-scrolled={scrolled}
-        data-open={open}
+    <div className={`relative flex items-center justify-center select-none ${className}`}>
+      {!imgError ? (
+        <img
+          src="/logo.png"
+          alt="Shaft Logo"
+          className="w-full h-full object-contain drop-shadow-[0_2px_10px_rgba(56,189,248,0.28)]"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <svg
+          viewBox="0 0 100 100"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-full drop-shadow-[0_3px_12px_rgba(30,150,255,0.28)]"
+        >
+          <defs>
+            <linearGradient id="shaftBar1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#BAE6FD" />
+              <stop offset="50%" stopColor="#60A5FA" />
+              <stop offset="100%" stopColor="#0284C7" />
+            </linearGradient>
+            <linearGradient id="shaftBar2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#BFDBFE" />
+              <stop offset="52%" stopColor="#C7D2FE" />
+              <stop offset="100%" stopColor="#38BDF8" />
+            </linearGradient>
+            <linearGradient id="shaftBar3" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#38BDF8" />
+              <stop offset="65%" stopColor="#BAE6FD" />
+              <stop offset="100%" stopColor="#E0F2FE" />
+            </linearGradient>
+          </defs>
+          <path d="M16 11 L38 25.5 L38 77.5 L16 90 Z" fill="url(#shaftBar1)" />
+          <path d="M47 28.5 L64.5 34 L64.5 71 L47 75.5 Z" fill="url(#shaftBar2)" />
+          <path d="M72.5 34.5 L84.5 36.8 L84.5 67.5 L72.5 69.2 Z" fill="url(#shaftBar3)" />
+        </svg>
+      )}
+    </div>
+  );
+};
+
+const KineticText: React.FC<{ text: string; isHovered: boolean }> = ({ text, isHovered }) => (
+  <span className="relative inline-flex overflow-hidden h-[20px] items-center">
+    <motion.span
+      animate={{
+        y: isHovered ? '-115%' : '0%',
+        filter: isHovered ? 'blur(3px)' : 'blur(0px)',
+        opacity: isHovered ? 0 : 1,
+      }}
+      transition={{ type: 'spring', stiffness: 460, damping: 32 }}
+      className="inline-block"
+    >
+      {text}
+    </motion.span>
+    <motion.span
+      initial={{ y: '115%', filter: 'blur(3px)', opacity: 0 }}
+      animate={{
+        y: isHovered ? '0%' : '115%',
+        filter: isHovered ? 'blur(0px)' : 'blur(3px)',
+        opacity: isHovered ? 1 : 0,
+      }}
+      transition={{ type: 'spring', stiffness: 460, damping: 32 }}
+      className="absolute inset-0 inline-flex items-center text-slate-950 font-bold"
+    >
+      {text}
+    </motion.span>
+  </span>
+);
+
+const MegaMenuCard: React.FC<{ item: MegaItem; index: number }> = ({ item, index }) => {
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const Icon = item.icon;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  return (
+    <motion.a
+      ref={cardRef}
+      href={`#${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+      initial={{ opacity: 0, y: 8, filter: 'blur(6px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      transition={{
+        duration: 0.32,
+        delay: index * 0.04,
+        ease: [0.22, 1, 0.36, 1],
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative flex items-start gap-3.5 p-3.5 rounded-2xl transition-all duration-300 bg-white/55 hover:bg-white/95 border border-slate-200/60 hover:border-sky-200/90 shadow-[0_2px_10px_-4px_rgba(15,23,42,0.03)] hover:shadow-[0_12px_28px_-8px_rgba(56,189,248,0.16)] overflow-hidden"
+    >
+      <div
+        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: isHovered
+            ? `radial-gradient(220px circle at ${mousePos.x}px ${mousePos.y}px, rgba(56, 189, 248, 0.13), transparent 75%)`
+            : 'none',
+        }}
+      />
+
+      <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-50 to-slate-100/90 border border-slate-200/70 group-hover:border-sky-200 group-hover:scale-105 transition-all duration-300 shadow-inner">
+        <div
+          className={`absolute inset-0 rounded-xl bg-gradient-to-br ${item.accent} opacity-0 group-hover:opacity-12 transition-opacity duration-300`}
+        />
+        <Icon className="w-4 h-4 text-slate-700 group-hover:text-sky-600 transition-colors duration-300" />
+      </div>
+
+      <div className="relative z-10 flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-bold text-[14.5px] text-slate-900 group-hover:text-sky-950 transition-colors">
+            {item.title}
+          </span>
+          {item.badge && (
+            <span className="text-[9.5px] tracking-wider font-bold uppercase px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-600 border border-sky-200/60">
+              {item.badge}
+            </span>
+          )}
+          <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 opacity-0 -translate-x-1 translate-y-1 group-hover:opacity-100 group-hover:translate-x-0 group-hover:translate-y-0 group-hover:text-sky-500 transition-all duration-200 ml-auto" />
+        </div>
+        <p className="text-xs text-slate-500 group-hover:text-slate-600 mt-0.5 leading-relaxed line-clamp-1">
+          {item.desc}
+        </p>
+      </div>
+    </motion.a>
+  );
+};
+
+export function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [openMegaId, setOpenMegaId] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoHovered, setLogoHovered] = useState(false);
+  const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleNavEnter = (link: NavLinkItem) => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+    setHoveredId(link.id);
+    if (link.hasMega) {
+      setOpenMegaId(link.id);
+    } else {
+      setOpenMegaId(null);
+    }
+  };
+
+  const handleNavLeave = () => {
+    setHoveredId(null);
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenMegaId(null);
+    }, 140);
+  };
+
+  const handleMegaEnter = () => {
+    if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+  };
+
+  const handleMegaLeave = () => {
+    setHoveredId(null);
+    setOpenMegaId(null);
+  };
+
+  const activeMegaData = NAV_LINKS.find((item) => item.id === openMegaId);
+
+  return (
+    <header
+      style={{ fontFamily: "'Amaranth', sans-serif" }}
+      className="fixed top-0 left-0 right-0 z-50 flex flex-col items-center px-4 sm:px-6 pt-3 sm:pt-5 pointer-events-none"
+    >
+      {/* Top Ambient Light Diffusion Bar */}
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[540px] max-w-[90vw] h-16 bg-gradient-to-b from-sky-300/20 via-indigo-200/10 to-transparent blur-2xl -z-10" />
+
+      {/* Main Floating Glass Navbar */}
+      <motion.nav
+        layout
+        initial={{ y: -24, opacity: 0, filter: 'blur(10px)' }}
+        animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+        transition={{
+          duration: 0.65,
+          ease: [0.16, 1, 0.3, 1],
+          layout: { type: 'spring', stiffness: 360, damping: 34 },
+        }}
+        onMouseLeave={handleNavLeave}
+        style={{
+          backdropFilter: 'blur(22px) saturate(190%)',
+          WebkitBackdropFilter: 'blur(22px) saturate(190%)',
+        }}
+        className={`pointer-events-auto relative flex items-center justify-between transition-colors duration-500 ${
+          scrolled
+            ? 'w-full max-w-[900px] rounded-full bg-white/85 px-4 py-2 shadow-[0_14px_40px_-12px_rgba(15,23,42,0.09),0_2px_6px_-1px_rgba(15,23,42,0.04),inset_0_1px_0_0_rgba(255,255,255,0.95)] border border-slate-200/80'
+            : 'w-full max-w-[1140px] rounded-[24px] bg-white/75 px-5 py-2.5 shadow-[0_8px_30px_-10px_rgba(15,23,42,0.06),inset_0_1px_0_0_rgba(255,255,255,0.9)] border border-white/90 ring-1 ring-slate-900/[0.04]'
+        }`}
       >
-        <div className="sx-nav__bar">
-          <a className="sx-nav__brand" href="#top" aria-label={`${brand} home`}>
-            <img className="sx-nav__logo" src={logoSrc} alt={brand} />
-          </a>
+        {/* Top Iridescent Specular Shimmer Line */}
+        <div className="pointer-events-none absolute inset-x-8 -top-px h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
 
-          <nav className="sx-nav__links" aria-label="Primary">
-            <span
-              className="sx-nav__pill"
-              aria-hidden="true"
-              data-show={showPill}
-              data-state={pillState}
-              style={{ "--x": `${pill.x}px`, "--w": `${pill.w}px` } as CSSProperties}
-            />
-            <ul onMouseLeave={() => setHovered(null)}>
-              {links.map((link, i) => (
-                <li key={link.href}>
-                  <a
-                    ref={(el) => {
-                      linkRefs.current[i] = el;
-                    }}
-                    className="sx-nav__link"
-                    href={link.href}
-                    aria-current={active === link.href ? "true" : undefined}
-                    onMouseEnter={() => setHovered(i)}
-                    onFocus={() => setHovered(i)}
-                    onBlur={() => setHovered(null)}
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        {/* LEFT: Brand Logo + Amaranth Wordmark */}
+        <a
+          href="#"
+          onMouseEnter={() => setLogoHovered(true)}
+          onMouseLeave={() => setLogoHovered(false)}
+          className="group relative flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl focus:outline-none"
+        >
+          <motion.div
+            animate={{
+              scale: logoHovered ? 1.15 : 0.85,
+              opacity: logoHovered ? 0.85 : 0,
+            }}
+            transition={{ duration: 0.35 }}
+            className="pointer-events-none absolute left-1 w-8 h-8 rounded-full bg-sky-400/35 blur-md"
+          />
 
-          <a
-            className="sx-nav__cta"
-            href={cta.href}
-            onMouseMove={onCtaMove}
-            onMouseLeave={onCtaLeave}
+          <motion.div
+            animate={{
+              rotateY: logoHovered ? 14 : 0,
+              rotateX: logoHovered ? -8 : 0,
+              scale: logoHovered ? 1.06 : 1,
+            }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
           >
-            <span>{cta.label}</span>
-          </a>
+            <ShaftLogoMark className="w-8 h-8 sm:w-[34px] sm:h-[34px]" />
+          </motion.div>
 
-          <button
-            type="button"
-            className="sx-nav__toggle"
-            aria-expanded={open}
-            aria-controls="sx-nav-panel"
-            aria-label={open ? "Close menu" : "Open menu"}
-            onClick={() => setOpen((v) => !v)}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[22px] sm:text-[24px] font-bold tracking-[-0.02em] text-slate-950 leading-none select-none">
+              Shaft
+            </span>
+            <motion.span
+              animate={{
+                y: logoHovered ? -1.5 : 0,
+                scale: logoHovered ? 1.06 : 1,
+              }}
+              className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-full bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-sky-500/10 text-sky-700 border border-sky-200/70"
+            >
+              OS
+            </motion.span>
+          </div>
+        </a>
 
-          <span className="sx-nav__progress" ref={progressRef} aria-hidden="true" />
-        </div>
+        {/* CENTER: Morphing Glass Pill Navigation Links */}
+        <div className="hidden lg:flex items-center gap-0.5 relative px-1.5 py-1 rounded-full bg-slate-100/55 border border-slate-200/50 shadow-inner">
+          {NAV_LINKS.map((link) => {
+            const isItemHovered = hoveredId === link.id;
+            const isMegaActive = openMegaId === link.id;
+            const shouldFocusBlur = hoveredId !== null && !isItemHovered;
 
-        <div className="sx-nav__panel" id="sx-nav-panel" aria-hidden={!open}>
-          <ul>
-            {links.map((link, i) => (
-              <li key={link.href} style={{ "--i": i } as CSSProperties}>
-                <a
-                  href={link.href}
-                  tabIndex={open ? 0 : -1}
-                  aria-current={active === link.href ? "true" : undefined}
-                  onClick={() => setOpen(false)}
-                >
-                  {link.label}
-                </a>
-              </li>
-            ))}
-            <li style={{ "--i": links.length } as CSSProperties}>
+            return (
               <a
-                className="sx-nav__panel-cta"
-                href={cta.href}
-                tabIndex={open ? 0 : -1}
-                onClick={() => setOpen(false)}
+                key={link.id}
+                href={link.href || `#${link.id}`}
+                onMouseEnter={() => handleNavEnter(link)}
+                style={{
+                  filter: shouldFocusBlur ? 'blur(0.65px)' : 'blur(0px)',
+                  opacity: shouldFocusBlur ? 0.52 : 1,
+                }}
+                className="relative px-3.5 py-1.5 rounded-full text-[14.5px] font-normal text-slate-700 transition-[filter,opacity,color] duration-200 flex items-center gap-1.5 select-none"
               >
-                {cta.label}
+                {(isItemHovered || isMegaActive) && (
+                  <motion.span
+                    layoutId="shaft-nav-glass-pill"
+                    transition={{ type: 'spring', stiffness: 430, damping: 32 }}
+                    className="absolute inset-0 rounded-full bg-white shadow-[0_2px_10px_-2px_rgba(14,165,233,0.14),0_1px_2px_rgba(15,23,42,0.06)] border border-sky-100/90 -z-10"
+                  >
+                    <span className="absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-sky-400/50 to-transparent" />
+                  </motion.span>
+                )}
+
+                <KineticText text={link.label} isHovered={isItemHovered} />
+
+                {link.badge && (
+                  <span className="px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-sky-100/80 text-sky-700 border border-sky-200/60">
+                    {link.badge}
+                  </span>
+                )}
+
+                {link.hasMega && (
+                  <motion.span
+                    animate={{
+                      rotate: isMegaActive ? 180 : 0,
+                      y: isMegaActive ? 0.5 : 0,
+                    }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                    className="text-slate-400"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5 stroke-[2.2]" />
+                  </motion.span>
+                )}
               </a>
-            </li>
-          </ul>
+            );
+          })}
         </div>
-      </header>
-    </>
+
+        {/* RIGHT: Subtle Command Pill + Shimmer Primary Action */}
+        <div className="hidden md:flex items-center gap-2">
+          <a
+            href="#signin"
+            className="relative px-3.5 py-1.5 rounded-full text-[14px] font-normal text-slate-600 hover:text-slate-950 transition-colors"
+          >
+            Sign in
+          </a>
+
+          <motion.a
+            href="#get-started"
+            whileHover={{ scale: 1.025, y: -1 }}
+            whileTap={{ scale: 0.975 }}
+            className="group relative inline-flex items-center gap-2 rounded-full p-[1px] overflow-hidden shadow-[0_8px_20px_-6px_rgba(14,165,233,0.45)]"
+          >
+            <span className="absolute inset-0 bg-gradient-to-r from-sky-400 via-indigo-500 to-sky-400 rounded-full opacity-90 group-hover:opacity-100 transition-opacity" />
+            <span className="relative flex items-center gap-1.5 rounded-full bg-slate-950 px-4 py-1.5 text-[13.5px] font-bold text-white transition-all group-hover:bg-slate-900">
+              <span className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-tr from-sky-400/20 via-transparent to-indigo-400/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <span>Start Building</span>
+              <ArrowUpRight className="w-3.5 h-3.5 text-sky-300 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </span>
+          </motion.a>
+        </div>
+
+        {/* MOBILE MENU BUTTON */}
+        <div className="flex lg:hidden items-center gap-2">
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle Menu"
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-slate-100/80 hover:bg-white text-slate-800 border border-slate-200/80 shadow-sm transition-colors"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {mobileOpen ? (
+                <motion.span
+                  key="close"
+                  initial={{ rotate: -90, opacity: 0, filter: 'blur(4px)' }}
+                  animate={{ rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ rotate: 90, opacity: 0, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <X className="w-4 h-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="menu"
+                  initial={{ rotate: 90, opacity: 0, filter: 'blur(4px)' }}
+                  animate={{ rotate: 0, opacity: 1, filter: 'blur(0px)' }}
+                  exit={{ rotate: -90, opacity: 0, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Menu className="w-4 h-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </motion.nav>
+
+      {/* DESKTOP MEGA MENU POPOVER */}
+      <AnimatePresence>
+        {activeMegaData && activeMegaData.featured && activeMegaData.items && (
+          <motion.div
+            key={activeMegaData.id}
+            onMouseEnter={handleMegaEnter}
+            onMouseLeave={handleMegaLeave}
+            initial={{ opacity: 0, y: -10, scale: 0.97, filter: 'blur(12px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, scale: 0.975, filter: 'blur(10px)' }}
+            transition={{ type: 'spring', stiffness: 410, damping: 32 }}
+            style={{
+              backdropFilter: 'blur(26px) saturate(200%)',
+              WebkitBackdropFilter: 'blur(26px) saturate(200%)',
+            }}
+            className="pointer-events-auto hidden lg:block mt-2.5 w-full max-w-[820px] rounded-[26px] bg-white/85 border border-white/95 ring-1 ring-slate-900/[0.06] shadow-[0_28px_70px_-15px_rgba(15,23,42,0.14),0_4px_16px_-4px_rgba(56,189,248,0.08)] p-4 overflow-hidden relative"
+          >
+            <div className="pointer-events-none absolute -top-20 -right-20 w-56 h-56 rounded-full bg-sky-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 -left-20 w-56 h-56 rounded-full bg-indigo-300/15 blur-3xl" />
+
+            <div className="grid grid-cols-12 gap-4 relative z-10">
+              {/* Left 7 cols: Interactive Feature Cards */}
+              <div className="col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {activeMegaData.items.map((item, idx) => (
+                  <MegaMenuCard key={item.title} item={item} index={idx} />
+                ))}
+              </div>
+
+              {/* Right 5 cols: Featured Glass Highlight Panel */}
+              <motion.div
+                initial={{ opacity: 0, x: 10, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                transition={{ duration: 0.3, delay: 0.06 }}
+                className="col-span-5 flex flex-col justify-between rounded-2xl p-5 bg-gradient-to-br from-sky-50/90 via-white to-indigo-50/70 border border-sky-200/70 shadow-inner relative overflow-hidden group"
+              >
+                <div className="pointer-events-none absolute -right-6 -bottom-6 opacity-20 group-hover:opacity-35 group-hover:scale-110 transition-all duration-500">
+                  <ShaftLogoMark className="w-36 h-36" />
+                </div>
+
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/90 border border-sky-200/80 text-[10px] font-bold tracking-wider text-sky-700 uppercase shadow-sm">
+                    <Sparkles className="w-3 h-3 text-sky-500" />
+                    {activeMegaData.featured.tag}
+                  </div>
+                  <h4 className="mt-3 text-lg font-bold text-slate-900 leading-snug">
+                    {activeMegaData.featured.title}
+                  </h4>
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                    {activeMegaData.featured.subtitle}
+                  </p>
+                </div>
+
+                <div className="mt-5 pt-3.5 border-t border-sky-200/60 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-[11px] font-bold text-slate-700">
+                      {activeMegaData.featured.metric}
+                    </span>
+                  </div>
+                  <a
+                    href="#explore"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 hover:text-sky-800 transition-colors"
+                  >
+                    {activeMegaData.featured.cta}
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Bottom Micro Status Bar */}
+            <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500 px-1">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5 text-sky-500" />
+                  <code className="font-mono text-[11px] text-slate-700">npx create-shaft@latest</code>
+                </span>
+                <span className="hidden sm:inline text-slate-300">•</span>
+                <span className="hidden sm:inline">Full TypeScript & Edge Native support</span>
+              </div>
+              <a href="#docs" className="text-slate-700 hover:text-sky-600 font-bold transition-colors">
+                Read Documentation →
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MOBILE DRAWER */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -12, scale: 0.96, filter: 'blur(12px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -10, scale: 0.96, filter: 'blur(10px)' }}
+            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+            style={{
+              backdropFilter: 'blur(24px) saturate(190%)',
+              WebkitBackdropFilter: 'blur(24px) saturate(190%)',
+            }}
+            className="pointer-events-auto lg:hidden mt-2.5 w-full max-w-[540px] rounded-3xl bg-white/90 border border-slate-200/80 shadow-[0_24px_48px_-12px_rgba(15,23,42,0.14)] p-4 overflow-hidden"
+          >
+            <div className="space-y-1">
+              {NAV_LINKS.map((link, i) => (
+                <motion.a
+                  key={link.id}
+                  href={link.href || `#${link.id}`}
+                  initial={{ opacity: 0, x: -10, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+                  transition={{ delay: i * 0.045 }}
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-base font-bold text-slate-800 hover:bg-sky-50/80 hover:text-sky-950 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    {link.label}
+                    {link.badge && (
+                      <span className="px-2 py-0.5 text-[10px] rounded-full bg-sky-100 text-sky-700">
+                        {link.badge}
+                      </span>
+                    )}
+                  </span>
+                  <ArrowUpRight className="w-4 h-4 text-slate-400" />
+                </motion.a>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-slate-200/70 grid grid-cols-2 gap-2.5">
+              <a
+                href="#signin"
+                className="flex items-center justify-center py-2.5 rounded-2xl text-sm font-bold text-slate-700 bg-slate-100/80 hover:bg-slate-200/70 transition-colors"
+              >
+                Sign in
+              </a>
+              <a
+                href="#get-started"
+                className="flex items-center justify-center gap-1.5 py-2.5 rounded-2xl text-sm font-bold text-white bg-slate-950 hover:bg-slate-900 shadow-md transition-colors"
+              >
+                <span>Start Building</span>
+                <ArrowUpRight className="w-4 h-4 text-sky-300" />
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
   );
 }
+
+export default Navbar;
