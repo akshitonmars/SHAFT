@@ -156,7 +156,6 @@ export default function Faq() {
   useEffect(() => {
     let raf = 0
     let previousValue = -1
-    let previousHeight = 0
 
     const reducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
@@ -221,7 +220,6 @@ export default function Faq() {
     }
 
     const onResize = () => {
-      previousHeight = 0
       previousValue = -1
       onScroll()
     }
