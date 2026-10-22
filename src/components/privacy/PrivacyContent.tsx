@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react"
 import {
-  ShieldAlert,
   Search,
-  ExternalLink,
   CheckCircle2,
   Lock,
   ChevronRight,
