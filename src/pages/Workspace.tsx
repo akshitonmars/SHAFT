@@ -30,6 +30,10 @@ export function Workspace({ user }: WorkspaceProps) {
   const [query, setQuery] = useState("")
   const [signingOut, setSigningOut] = useState(false)
   const [cloudReady, setCloudReady] = useState(false)
+  const [connectorStatus, setConnectorStatus] = useState<"loading" | "connected" | "disconnected">("loading")
+  const [supabaseProjects, setSupabaseProjects] = useState<Array<{ id: string; name: string; region?: string; status?: string }>>([])
+  const [connectorBusy, setConnectorBusy] = useState(false)
+  const [connectorMessage, setConnectorMessage] = useState("")
   useEffect(() => {
     let active = true
     loadUserData(user.uid).then((next) => { if (active) { setData(next); setCloudReady(true) } }).catch(() => {
@@ -37,6 +41,79 @@ export function Workspace({ user }: WorkspaceProps) {
     })
     return () => { active = false }
   }, [user.uid])
+
+  useEffect(() => {
+    let active = true
+    const loadConnector = async () => {
+      try {
+        const token = await user.getIdToken()
+        const response = await fetch("/api/connectors/supabase/projects", { headers: { Authorization: "Bearer " + token } })
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || "Could not check Supabase connection.")
+        if (active) {
+          setConnectorStatus(result.connected ? "connected" : "disconnected")
+          setSupabaseProjects(Array.isArray(result.projects) ? result.projects : [])
+          if (result.reconnectRequired) setConnectorMessage("Your Supabase session expired. Connect it again.")
+        }
+      } catch (err) {
+        if (active) {
+          setConnectorStatus("disconnected")
+          setConnectorMessage(err instanceof Error ? err.message : "Could not check the Supabase connection.")
+        }
+      }
+    }
+    void loadConnector()
+    return () => { active = false }
+  }, [user])
+
+  const connectSupabase = async () => {
+    setConnectorBusy(true)
+    setConnectorMessage("")
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch("/api/connectors/supabase/connect", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+      })
+      const result = await response.json()
+      if (!response.ok || !result.authorizationUrl) throw new Error(result.error || "Could not start Supabase connection.")
+      window.location.assign(result.authorizationUrl)
+    } catch (err) {
+      setConnectorMessage(err instanceof Error ? err.message : "Could not start Supabase connection.")
+      setConnectorBusy(false)
+    }
+  }
+
+  const disconnectSupabase = async () => {
+    setConnectorBusy(true)
+    setConnectorMessage("")
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch("/api/connectors/supabase/disconnect", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token },
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || "Could not disconnect Supabase.")
+      setConnectorStatus("disconnected")
+      setSupabaseProjects([])
+      setConnectorMessage("Supabase disconnected.")
+    } catch (err) {
+      setConnectorMessage(err instanceof Error ? err.message : "Could not disconnect Supabase.")
+    } finally {
+      setConnectorBusy(false)
+    }
+  }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("connector") !== "supabase") return
+    const status = params.get("status")
+    if (status === "connected") setConnectorMessage("Supabase connected successfully.")
+    else if (status === "denied") setConnectorMessage("Supabase connection was cancelled.")
+    else if (status === "error") setConnectorMessage(params.get("reason") || "Supabase connection failed.")
+    window.history.replaceState({}, "", window.location.pathname)
+  }, [])
 
   const displayName = data.name || user.displayName || (user.email ? user.email.split("@")[0] : "Builder")
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "S"
@@ -102,15 +179,15 @@ export function Workspace({ user }: WorkspaceProps) {
           <div className="border-b border-slate-200/70 bg-white/50 px-4 py-2 lg:hidden"><nav className="flex gap-1 overflow-x-auto" aria-label="Mobile workspace navigation">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} type="button" onClick={() => { setView(item.label); setQuery("") }} className={"inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium " + (view === item.label ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500")}><Icon size={14} />{item.label}</button> })}</nav></div>
 
           <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 sm:py-10">
-            <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-[#E0EBE9] bg-[#F0F8F6] px-4 py-3 sm:flex-row sm:items-center"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#397D76]"><CircleHelp size={17} /></div><p className="text-xs leading-5 text-slate-600"><strong className="font-semibold text-[#245C55]">Cloud workspace:</strong> your profile and projects sync to your SHAFT account in the cloud. Connectors are not enabled yet.</p></div>
+            <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-[#E0EBE9] bg-[#F0F8F6] px-4 py-3 sm:flex-row sm:items-center"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#397D76]"><CircleHelp size={17} /></div><p className="text-xs leading-5 text-slate-600"><strong className="font-semibold text-[#245C55]">Cloud workspace:</strong> your profile and projects sync to your SHAFT account. Connect your tools below to bring your project stack into SHAFT.</p></div>
 
             {view === "Overview" && <>
               <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">Your workspace</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>Let's build, {displayName.split(/\s+/)[0]}.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">Your ideas deserve more than a notes app. Start a project and bring the moving parts together.</p></div><button type="button" onClick={() => { setShowCreate(true); setError("") }} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[#101319] px-5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#252B35]"><Plus size={17} /> Start a project</button></div>
-              <div className="mt-8 grid gap-4 sm:grid-cols-3"><StatCard label="Projects" value={String(data.projects.length)} hint="Created in this workspace" icon={<FolderKanban size={18} />} /><StatCard label="Connected tools" value="0" hint="Connectors are coming next" icon={<Gauge size={18} />} /><StatCard label="Ideas captured" value="0" hint="Idea capture is on the roadmap" icon={<Lightbulb size={18} />} /></div>
+              <div className="mt-8 grid gap-4 sm:grid-cols-3"><StatCard label="Projects" value={String(data.projects.length)} hint="Created in this workspace" icon={<FolderKanban size={18} />} /><StatCard label="Connected tools" value={connectorStatus === "connected" ? "1" : "0"} hint={connectorStatus === "connected" ? "Supabase connected" : "Connect your development stack"} icon={<Gauge size={18} />} /><StatCard label="Ideas captured" value="0" hint="Idea capture is on the roadmap" icon={<Lightbulb size={18} />} /></div>
               <div className="mt-10"><div className="flex items-center justify-between gap-4"><div><h2 className="text-xl font-semibold tracking-tight">Recent projects</h2><p className="mt-1 text-sm text-slate-500">Pick up where you left off.</p></div><button type="button" onClick={() => setView("My Projects")} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:text-[#101319]">All projects <ArrowUpRight size={15} /></button></div><ProjectList projects={data.projects.slice(0, 3)} onCreate={() => setShowCreate(true)} /></div>
               <div className="mt-8 grid gap-4 md:grid-cols-2">
                 <ActionCard icon={<Sparkles size={19} />} title="Meet SHAFT AI" text="The AI project companion is the next part of the journey." action={() => setView("SHAFT AI")} />
-                <ActionCard icon={<Database size={19} />} title="Connect your stack" text="Supabase and Vercel setup will come in a later phase." action={() => setView("Settings")} />
+                <ActionCard icon={<Database size={19} />} title="Connect Supabase" text={connectorStatus === "connected" ? "Your Supabase account is connected. Open Settings to view projects." : "Authorize SHAFT to read your Supabase projects. No API keys to copy."} action={() => setView("Settings")} />
               </div>
             </>}
 
@@ -118,7 +195,7 @@ export function Workspace({ user }: WorkspaceProps) {
 
             {view === "Ideas" && <Placeholder icon={<Lightbulb size={23} />} eyebrow="Capture and shape" title="Give your ideas a place to grow." text="Idea capture and the path from an idea to a project are planned for a later phase. For now, start a project and keep its purpose in the description." action="Start a project" onAction={() => setShowCreate(true)} />}
             {view === "SHAFT AI" && <Placeholder icon={<Bot size={23} />} eyebrow="Your project companion" title="SHAFT AI is taking shape." text="AI provider connections and project-aware assistance will be added next. No AI provider is connected in this preview." action="View my projects" onAction={() => setView("My Projects")} />}
-            {view === "Settings" && <section className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">Your account</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em]" style={{ fontFamily: "Amaranth, sans-serif" }}>Settings</h1><div className="mt-7 rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-semibold">Profile</p><dl className="mt-5 space-y-4 text-sm"><Setting label="Name" value={displayName} /><Setting label="Email" value={user.email || "Not provided by sign-in provider"} /><Setting label="Role" value={data.role || "Not selected"} /><Setting label="Data storage" value="Firebase Cloud Firestore" /></dl></div><button type="button" onClick={() => void leave()} disabled={signingOut} className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:text-[#101319] disabled:opacity-50"><LogOut size={16} /> Sign out</button></section>}
+            {view === "Settings" && <section className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">Your account</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em]" style={{ fontFamily: "Amaranth, sans-serif" }}>Settings</h1><div className="mt-7 rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-semibold">Connected tools</p><div className="mt-4 flex flex-col gap-4 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-[#397D76]"><Database size={20} /></span><div className="min-w-0 flex-1"><p className="font-semibold">Supabase</p><p className="mt-1 text-sm leading-5 text-slate-500">{connectorStatus === "loading" ? "Checking connection…" : connectorStatus === "connected" ? "Connected. SHAFT can read your projects." : "Connect your Supabase account securely with OAuth."}</p></div>{connectorStatus === "connected" ? <button type="button" disabled={connectorBusy} onClick={() => void disconnectSupabase()} className="h-10 shrink-0 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 disabled:opacity-50">{connectorBusy ? "Working…" : "Disconnect"}</button> : <button type="button" disabled={connectorBusy || connectorStatus === "loading"} onClick={() => void connectSupabase()} className="h-10 shrink-0 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-50">{connectorBusy ? "Connecting…" : "Connect Supabase"}</button>}</div>{connectorMessage && <p role="status" className="mt-3 break-words rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{connectorMessage}</p>}{connectorStatus === "connected" && <div className="mt-5"><p className="text-sm font-semibold">Your Supabase projects</p>{supabaseProjects.length ? <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">{supabaseProjects.map((project) => <div key={project.id} className="flex items-center justify-between gap-3 px-3 py-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{project.name}</p><p className="mt-1 text-xs text-slate-400">{project.region || "Region unavailable"}{project.status ? " · " + project.status : ""}</p></div><span className="rounded-full bg-[#EAF7F4] px-2.5 py-1 text-xs font-medium text-[#245C55]">Supabase</span></div>)}</div> : <p className="mt-2 text-sm text-slate-500">No projects were returned for this account.</p>}</div>}<p className="mt-6 text-sm font-semibold">Profile</p><dl className="mt-5 space-y-4 text-sm"><Setting label="Name" value={displayName} /><Setting label="Email" value={user.email || "Not provided by sign-in provider"} /><Setting label="Role" value={data.role || "Not selected"} /><Setting label="Data storage" value="Firebase Cloud Firestore" /></dl></div><button type="button" onClick={() => void leave()} disabled={signingOut} className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:text-[#101319] disabled:opacity-50"><LogOut size={16} /> Sign out</button></section>}
           </div>
         </div>
       </div>
