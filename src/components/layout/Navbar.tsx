@@ -218,10 +218,12 @@ export default function Navbar({ onExploreClick, onPrivacyClick }: NavbarProps) 
             <a href="/signin" className="hidden rounded-lg px-2 py-2 text-[13px] font-medium text-slate-600 transition-colors hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] sm:inline-flex">
               Sign in
             </a>
-            <a href="/get-started" className="group relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#101319] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[#202630] hover:shadow-[0_6px_18px_rgba(16,19,25,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]">
-              <span>Start building</span>
-              <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
-            </a>
+{scrolled && (
+              <a href="/get-started" className="group relative inline-flex h-9 items-center justify-center gap-2 overflow-hidden rounded-full bg-[#101319] px-3.5 text-[12px] font-semibold text-white shadow-sm transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-px hover:bg-[#202630] hover:shadow-[0_6px_18px_rgba(16,19,25,0.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 sm:px-4 sm:text-[13px]">
+                <span>Start building</span>
+                <span aria-hidden="true" className="inline-block transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+              </a>
+            )}
 
             <button
               type="button"
