@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+type NavbarProps = { onExploreClick?: () => void };
+
 const NAV_LINKS = [
   { label: "Platform", href: "#platform" },
   { label: "Workflow", href: "#workflow" },
-  { label: "For teams", href: "#for-teams" },
+  { label: "Explore", href: "#explore", explore: true },
 ];
 
 const styles = `
@@ -130,7 +132,7 @@ const styles = `
 }
 `;
 
-export default function Navbar() {
+export default function Navbar({ onExploreClick }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -178,7 +180,12 @@ export default function Navbar() {
 
           <div className="shaftNavLinks">
             {NAV_LINKS.map((link) => (
-              <a className="shaftNavLink" href={link.href} key={link.label}>
+              <a
+                className="shaftNavLink"
+                href={link.href}
+                key={link.label}
+                onClick={link.explore && onExploreClick ? (event) => { event.preventDefault(); onExploreClick(); } : undefined}
+              >
                 {link.label}
               </a>
             ))}
@@ -234,7 +241,13 @@ export default function Navbar() {
                     className="shaftNavMobileLink"
                     href={link.href}
                     key={link.label}
-                    onClick={closeMenu}
+                    onClick={(event) => {
+                      closeMenu();
+                      if (link.explore && onExploreClick) {
+                        event.preventDefault();
+                        onExploreClick();
+                      }
+                    }}
                     initial={reduceMotion ? false : { opacity: 0, x: -5 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: reduceMotion ? 0 : index * 0.035, duration: 0.18 }}
