@@ -190,7 +190,7 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
             </div>
           )}
 
-          <p className="mt-12 border-t border-slate-200/80 pt-4 text-xs leading-5 text-slate-400">Your setup and projects are currently saved in this browser on this device. Cloud sync is not connected yet.</p>
+          <p className="mt-12 border-t border-slate-200/80 pt-4 text-xs leading-5 text-slate-400">Your profile, onboarding progress and projects sync to your SHAFT account in the cloud.</p>
         </section>
       </div>
     </main>
