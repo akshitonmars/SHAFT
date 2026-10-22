@@ -4,6 +4,8 @@ import Planet from "../components/landing/Planet"
 import Features from "../components/landing/Features"
 import Faq from "../components/landing/Faq"
 import LogoShowcase from "../components/landing/LogoShowcase"
+import Footer from "../components/landing/Footer"
+import { MotionStyles, SectionDivider, SplitText } from "../components/landing/motion"
 
 const PAGE_CSS = `
 @import url("https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600&display=swap");
@@ -28,9 +30,10 @@ export function Home() {
   return (
     <main className="bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <style>{PAGE_CSS}</style>
+      <MotionStyles />
       <Navbar onExploreClick={scrollToProduct} />
 
-      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-28 pt-32 text-center">
+      <section className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-6 pb-40 pt-32 text-center">
         <DotField />
         <Planet />
 
@@ -65,15 +68,16 @@ export function Home() {
           </span>
         </div>
 
-        <nav aria-label="Legal" className="absolute bottom-16 left-6 z-10 flex gap-5 text-xs text-slate-500 sm:left-10">
+        <nav aria-label="Legal" className="absolute bottom-32 left-6 z-10 flex gap-5 text-xs text-slate-500 sm:left-10">
           <a href="/terms" className="transition-colors hover:text-[#101319]">Terms</a>
           <a href="/privacy" className="transition-colors hover:text-[#101319]">Privacy</a>
         </nav>
       </section>
 
+      <SectionDivider to="#050B1F" />
       <section
         id="product"
-        className="relative z-10 -mt-12 overflow-hidden rounded-t-[48px] px-6 pb-20 pt-28 text-white sm:px-10"
+        className="relative overflow-hidden px-6 pb-32 pt-28 text-white sm:px-10"
         style={{ background: "linear-gradient(180deg, #050B1F 0%, #07123A 100%)" }}
       >
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
@@ -84,22 +88,16 @@ export function Home() {
 
         <div className="relative mx-auto max-w-[1100px]">
           <h2 className="max-w-[14ch] text-[clamp(36px,6vw,68px)] font-bold leading-[1.02] tracking-[-0.03em]" style={display}>
-            Your whole project, one view.
+            <SplitText text="Your whole project, one view." mode="rise" />
           </h2>
           <Features />
         </div>
       </section>
+      <SectionDivider to="#050B1F" />
       <Faq />
+      <SectionDivider to="#07123A" />
       <LogoShowcase />
-      <footer className="flex flex-col gap-4 bg-[#0A1F6B] px-6 pb-10 pt-6 text-sm text-white/50 sm:flex-row sm:items-center sm:justify-between sm:px-10">
-        <span className="text-lg font-bold text-white" style={display}>Shaft</span>
-        <nav aria-label="Footer" className="flex gap-6">
-          <a href="#product" className="transition-colors hover:text-white">Product</a>
-          <a href="/terms" className="transition-colors hover:text-white">Terms</a>
-          <a href="/privacy" className="transition-colors hover:text-white">Privacy</a>
-        </nav>
-        <span>© 2026 Shaft</span>
-      </footer>
+      <Footer />
     </main>
   )
 }
