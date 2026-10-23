@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { firestore, sendVercelError, verifyUser } from "./vercelConnector.js"
+import { firestore, sendVercelError, verifyUser } from "../vercelConnector.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store")
