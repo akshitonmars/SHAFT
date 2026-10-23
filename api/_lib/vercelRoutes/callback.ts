@@ -17,11 +17,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const code = typeof req.query.code === "string" ? req.query.code : ""
     const state = typeof req.query.state === "string" ? req.query.state : ""
     if (!code || !state) throw new Error("Vercel did not return an authorization code.")
-    const { uid } = verifyVercelState(state)
+    const { uid, nonce } = verifyVercelState(state)
+    const pkceRef = firestore().collection("shaftVercelOAuthStates").doc(nonce)
+    const pkceSnapshot = await pkceRef.get()
+    if (!pkceSnapshot.exists) throw new Error("Vercel PKCE session is missing or already used. Please connect again.")
+    const pkce = pkceSnapshot.data() as { uid?: string; codeVerifier?: string; expiresAt?: number }
+    if (pkce.uid !== uid || typeof pkce.codeVerifier !== "string" || typeof pkce.expiresAt !== "number" || pkce.expiresAt < Date.now()) {
+      await pkceRef.delete()
+      throw new Error("Vercel PKCE session is invalid or expired. Please connect again.")
+    }
+    // Consume the short-lived verifier before exchanging the one-time authorization code.
+    await pkceRef.delete()
     const response = await fetch("https://api.vercel.com/login/oauth/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-      body: new URLSearchParams({ grant_type: "authorization_code", client_id: vercelClientId(), client_secret: vercelClientSecret(), code, redirect_uri: vercelCallbackUrl() }),
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: vercelClientId(),
+        client_secret: vercelClientSecret(),
+        code,
+        redirect_uri: vercelCallbackUrl(),
+        code_verifier: pkce.codeVerifier,
+      }),
     })
     const tokens = await response.json()
     if (!response.ok || typeof tokens.access_token !== "string") {
