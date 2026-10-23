@@ -4,6 +4,8 @@ import { onAuthStateChanged } from "firebase/auth"
 import { Home } from "./pages/Home"
 import { Privacy } from "./pages/Privacy"
 import { Terms } from "./pages/Terms"
+import { Documentation } from "./pages/Documentation"
+import { Eula } from "./pages/Eula"
 import { SignUp } from "./pages/SignUp"
 import { SignIn } from "./pages/SignIn"
 import { AuthCallback } from "./pages/AuthCallback"
@@ -28,6 +30,8 @@ function getInitialPath(): string {
   if (pathname === "/vercel") return "/vercel"
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return "/privacy"
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
+  if (pathname === "/docs" || pathname.startsWith("/docs/")) return "/docs"
+  if (pathname === "/eula" || pathname.startsWith("/eula/")) return "/eula"
   const hash = window.location.hash
   if (hash === "#/privacy" || hash === "#privacy") return "/privacy"
   if (hash === "#/terms" || hash === "#terms") return "/terms"
@@ -112,7 +116,7 @@ export const App: React.FC = () => {
         setCurrentPath("/terms")
         window.scrollTo({ top: 0, behavior: "smooth" })
       } else if (href === "/" || href === "/#product" || href === "#product") {
-        if (currentPath === "/privacy" || currentPath === "/terms") {
+        if (currentPath === "/privacy" || currentPath === "/terms" || currentPath === "/docs" || currentPath === "/eula") {
           event.preventDefault()
           window.history.pushState({}, "", "/")
           setCurrentPath("/")
@@ -137,6 +141,8 @@ export const App: React.FC = () => {
 
   if (currentPath === "/privacy") return <Privacy onNavigateHome={() => navigateTo("/")} />
   if (currentPath === "/terms") return <Terms onNavigateHome={() => navigateTo("/")} />
+  if (currentPath === "/docs") return <Documentation />
+  if (currentPath === "/eula") return <Eula />
   if (currentPath === "/signin") return <SignIn />
   if (currentPath === "/signup") return <SignUp />
   if (currentPath === "/auth/callback") return <AuthCallback />
@@ -164,5 +170,4 @@ export const App: React.FC = () => {
   }
   return <Home onPrivacyClick={() => navigateTo("/privacy")} />
 }
-
 export default App
