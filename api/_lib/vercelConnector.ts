@@ -1,4 +1,4 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto"
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { firestore, verifyUser } from "./supabaseConnector.js"
 
@@ -17,9 +17,15 @@ export function vercelClientSecret() {
 function sign(value: string) {
   return createHmac("sha256", vercelClientSecret()).update(value).digest("base64url")
 }
+export function createVercelPkce() {
+  const verifier = randomBytes(32).toString("base64url")
+  const challenge = createHash("sha256").update(verifier).digest("base64url")
+  return { verifier, challenge }
+}
 export function createVercelState(uid: string) {
-  const payload = Buffer.from(JSON.stringify({ uid, nonce: randomBytes(18).toString("base64url"), exp: Date.now() + 10 * 60 * 1000 })).toString("base64url")
-  return payload + "." + sign(payload)
+  const nonce = randomBytes(18).toString("base64url")
+  const payload = Buffer.from(JSON.stringify({ uid, nonce, exp: Date.now() + 10 * 60 * 1000 })).toString("base64url")
+  return { state: payload + "." + sign(payload), nonce }
 }
 export function verifyVercelState(state: string) {
   const [payload, signature, extra] = state.split(".")
@@ -28,7 +34,7 @@ export function verifyVercelState(state: string) {
   const actual = new Uint8Array(Buffer.from(signature))
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new Error("Invalid Vercel OAuth state.")
   const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
-  if (typeof decoded.uid !== "string" || typeof decoded.exp !== "number" || decoded.exp < Date.now()) throw new Error("Vercel OAuth session expired. Please connect again.")
+  if (typeof decoded.uid !== "string" || typeof decoded.nonce !== "string" || typeof decoded.exp !== "number" || decoded.exp < Date.now()) throw new Error("Vercel OAuth session expired. Please connect again.")
   return decoded as { uid: string; nonce: string; exp: number }
 }
 export function vercelCallbackUrl() {
