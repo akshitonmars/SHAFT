@@ -1,4 +1,4 @@
-import React, { useEffect } from "react"
+import { useEffect } from "react"
 import DotField from "../components/landing/DotField"
 
 const topics = [
