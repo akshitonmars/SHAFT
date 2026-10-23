@@ -5,7 +5,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store")
   const base = (process.env.APP_URL || "https://buildatshaft.vercel.app").replace(/\/$/, "")
   if (req.method !== "GET") return res.status(405).send("Method not allowed.")
-  if (typeof req.query.error === "string") return res.redirect(302, base + "/vercel?error=authorization_denied")
+  if (typeof req.query.error === "string") {
+    const providerError = req.query.error.slice(0, 120)
+    const providerMessage = typeof req.query.error_description === "string" ? req.query.error_description.slice(0, 240) : ""
+    console.error("[SHAFT Vercel OAuth] Provider rejected authorization", { providerError, providerMessage })
+    const query = new URLSearchParams({ error: "authorization_denied", provider_error: providerError })
+    if (providerMessage) query.set("provider_message", providerMessage)
+    return res.redirect(302, base + "/vercel?" + query.toString())
+  }
   try {
     const code = typeof req.query.code === "string" ? req.query.code : ""
     const state = typeof req.query.state === "string" ? req.query.state : ""
