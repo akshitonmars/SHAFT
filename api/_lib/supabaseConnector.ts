@@ -47,8 +47,8 @@ export function createState(uid: string) {
 export function verifyState(state: string) {
   const [payload, signature, extra] = state.split(".")
   if (!payload || !signature || extra) throw new Error("Invalid OAuth state.")
-  const expected = Buffer.from(sign(payload))
-  const actual = Buffer.from(signature)
+  const expected = new Uint8Array(Buffer.from(sign(payload)))
+  const actual = new Uint8Array(Buffer.from(signature))
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new Error("Invalid OAuth state.")
   const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
   if (typeof decoded.uid !== "string" || typeof decoded.exp !== "number" || decoded.exp < Date.now()) {
