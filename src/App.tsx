@@ -6,6 +6,7 @@ import { Privacy } from "./pages/Privacy"
 import { Terms } from "./pages/Terms"
 import { Documentation } from "./pages/Documentation"
 import { Eula } from "./pages/Eula"
+import { Support } from "./pages/Support"
 import { SignUp } from "./pages/SignUp"
 import { SignIn } from "./pages/SignIn"
 import { AuthCallback } from "./pages/AuthCallback"
@@ -32,6 +33,7 @@ function getInitialPath(): string {
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
   if (pathname === "/docs" || pathname.startsWith("/docs/")) return "/docs"
   if (pathname === "/eula" || pathname.startsWith("/eula/")) return "/eula"
+  if (pathname === "/support" || pathname.startsWith("/support/")) return "/support"
   const hash = window.location.hash
   if (hash === "#/privacy" || hash === "#privacy") return "/privacy"
   if (hash === "#/terms" || hash === "#terms") return "/terms"
@@ -116,7 +118,7 @@ export const App: React.FC = () => {
         setCurrentPath("/terms")
         window.scrollTo({ top: 0, behavior: "smooth" })
       } else if (href === "/" || href === "/#product" || href === "#product") {
-        if (currentPath === "/privacy" || currentPath === "/terms" || currentPath === "/docs" || currentPath === "/eula") {
+        if (currentPath === "/privacy" || currentPath === "/terms" || currentPath === "/docs" || currentPath === "/eula" || currentPath === "/support") {
           event.preventDefault()
           window.history.pushState({}, "", "/")
           setCurrentPath("/")
@@ -143,6 +145,7 @@ export const App: React.FC = () => {
   if (currentPath === "/terms") return <Terms onNavigateHome={() => navigateTo("/")} />
   if (currentPath === "/docs") return <Documentation />
   if (currentPath === "/eula") return <Eula />
+  if (currentPath === "/support") return <Support />
   if (currentPath === "/signin") return <SignIn />
   if (currentPath === "/signup") return <SignUp />
   if (currentPath === "/auth/callback") return <AuthCallback />
