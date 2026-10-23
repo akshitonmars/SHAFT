@@ -1,72 +1,76 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 import { firestore, vercelCallbackUrl, vercelClientId, vercelClientSecret, verifyVercelState } from "../vercelConnector.js"
 
+function returnToShaft(res: VercelResponse, base: string, error: string) {
+  return res.redirect(302, base + "/vercel?error=" + encodeURIComponent(error))
+}
+function safeVercelNext(value: unknown) {
+  if (typeof value !== "string") return null
+  try {
+    const url = new URL(value)
+    return url.protocol === "https:" && (url.hostname === "vercel.com" || url.hostname.endsWith(".vercel.com")) ? url.toString() : null
+  } catch { return null }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store")
   const base = (process.env.APP_URL || "https://buildatshaft.vercel.app").replace(/\/$/, "")
   if (req.method !== "GET") return res.status(405).send("Method not allowed.")
-  if (typeof req.query.error === "string") {
-    const providerError = req.query.error.slice(0, 120)
-    const providerMessage = typeof req.query.error_description === "string" ? req.query.error_description.slice(0, 240) : ""
-    console.error("[SHAFT Vercel OAuth] Provider rejected authorization", { providerError, providerMessage })
-    const query = new URLSearchParams({ error: "authorization_denied", provider_error: providerError })
-    if (providerMessage) query.set("provider_message", providerMessage)
-    return res.redirect(302, base + "/vercel?" + query.toString())
-  }
   try {
     const code = typeof req.query.code === "string" ? req.query.code : ""
     const state = typeof req.query.state === "string" ? req.query.state : ""
-    if (!code || !state) throw new Error("Vercel did not return an authorization code.")
-    const { uid, nonce } = verifyVercelState(state)
-    const pkceRef = firestore().collection("shaftVercelOAuthStates").doc(nonce)
-    const pkceSnapshot = await pkceRef.get()
-    if (!pkceSnapshot.exists) throw new Error("Vercel PKCE session is missing or already used. Please connect again.")
-    const pkce = pkceSnapshot.data() as { uid?: string; codeVerifier?: string; expiresAt?: number }
-    if (pkce.uid !== uid || typeof pkce.codeVerifier !== "string" || typeof pkce.expiresAt !== "number" || pkce.expiresAt < Date.now()) {
-      await pkceRef.delete()
-      throw new Error("Vercel PKCE session is invalid or expired. Please connect again.")
+    if (typeof req.query.error === "string") {
+      console.error("[SHAFT Vercel integration] Installation rejected", { error: req.query.error.slice(0, 120) })
+      return returnToShaft(res, base, "authorization_denied")
     }
-    // Consume the short-lived verifier before exchanging the one-time authorization code.
-    await pkceRef.delete()
-    const response = await fetch("https://api.vercel.com/login/oauth/token", {
+    if (!code || !state) throw new Error("Vercel did not return an integration installation code and state.")
+    const { uid, nonce } = verifyVercelState(state)
+    const stateRef = firestore().collection("shaftVercelOAuthStates").doc(nonce)
+    const stateSnapshot = await stateRef.get()
+    if (!stateSnapshot.exists) throw new Error("Vercel integration session is missing or already used. Please connect again.")
+    const saved = stateSnapshot.data() as { uid?: string; expiresAt?: number }
+    if (saved.uid !== uid || typeof saved.expiresAt !== "number" || saved.expiresAt < Date.now()) {
+      await stateRef.delete()
+      throw new Error("Vercel integration session is invalid or expired. Please connect again.")
+    }
+    await stateRef.delete()
+
+    const response = await fetch("https://api.vercel.com/v2/oauth/access_token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: new URLSearchParams({
-        grant_type: "authorization_code",
         client_id: vercelClientId(),
         client_secret: vercelClientSecret(),
         code,
         redirect_uri: vercelCallbackUrl(),
-        code_verifier: pkce.codeVerifier,
       }),
     })
     const tokens = await response.json()
     if (!response.ok || typeof tokens.access_token !== "string") {
       const providerError = typeof tokens.error === "string" ? tokens.error.slice(0, 120) : "no_access_token"
       const providerMessage = typeof tokens.error_description === "string" ? tokens.error_description.slice(0, 240) : ""
-      throw new Error("Vercel token exchange failed (HTTP " + response.status + ", " + providerError + ")" + (providerMessage ? ": " + providerMessage : "."))
+      throw new Error("Vercel integration token exchange failed (HTTP " + response.status + ", " + providerError + ")" + (providerMessage ? ": " + providerMessage : "."))
     }
-    let profile: Record<string, unknown> = {}
-    try {
-      const profileResponse = await fetch("https://api.vercel.com/login/oauth/userinfo", { headers: { Authorization: "Bearer " + tokens.access_token, Accept: "application/json" } })
-      if (profileResponse.ok) profile = await profileResponse.json()
-    } catch { /* Profile metadata is optional. */ }
+
+    const teamId = typeof req.query.teamId === "string" && req.query.teamId ? req.query.teamId : (typeof tokens.team_id === "string" && tokens.team_id ? tokens.team_id : null)
+    const configurationId = typeof req.query.configurationId === "string" ? req.query.configurationId : ""
+    const nextUrl = safeVercelNext(req.query.next)
     await firestore().collection("shaftConnectorSecrets").doc(uid + "_vercel").set({
       accessToken: tokens.access_token,
-      refreshToken: typeof tokens.refresh_token === "string" ? tokens.refresh_token : null,
-      expiresAt: typeof tokens.expires_in === "number" ? Date.now() + tokens.expires_in * 1000 : null,
-      accountName: typeof profile.name === "string" ? profile.name : typeof profile.username === "string" ? profile.username : null,
-      email: typeof profile.email === "string" ? profile.email : null,
-      avatarUrl: typeof profile.picture === "string" ? profile.picture : null,
+      teamId,
+      configurationId: configurationId || null,
+      nextUrl,
+      accountName: "",
+      email: "",
+      avatarUrl: null,
       connectedAt: Date.now(),
     })
+    // Vercel supplies "next" for completing its installation popup. Never redirect to an arbitrary host.
+    if (nextUrl) return res.redirect(302, nextUrl)
     return res.redirect(302, base + "/vercel?connected=1")
   } catch (error) {
     const message = error instanceof Error ? error.message : "Connection failed."
-    console.error("[SHAFT Vercel OAuth] Callback failed", {
-      name: error instanceof Error ? error.name : typeof error,
-      message: message.slice(0, 400),
-    })
-    return res.redirect(302, base + "/vercel?error=" + (/not configured|Missing FIREBASE_SERVICE_ACCOUNT_JSON/.test(message) ? "configuration_required" : "connection_failed"))
+    console.error("[SHAFT Vercel integration] Callback failed", { message: message.slice(0, 400) })
+    return returnToShaft(res, base, /not configured|Missing FIREBASE_SERVICE_ACCOUNT_JSON/.test(message) ? "configuration_required" : "connection_failed")
   }
 }
