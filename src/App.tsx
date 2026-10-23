@@ -12,6 +12,7 @@ import { Workspace } from "./pages/Workspace"
 import { DatabaseExplorer } from "./pages/DatabaseExplorer"
 import { GitHubConnector } from "./pages/GitHubConnector"
 import { VercelConnector } from "./pages/VercelConnector"
+import { VercelConnector } from "./pages/VercelConnector"
 import { auth } from "./lib/firebase"
 import { loadUserData } from "./lib/onboarding"
 
@@ -25,6 +26,7 @@ function getInitialPath(): string {
   if (pathname === "/workspace") return "/workspace"
   if (pathname === "/database") return "/database"
   if (pathname === "/github") return "/github"
+  if (pathname === "/vercel") return "/vercel"
   if (pathname === "/vercel") return "/vercel"
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return "/privacy"
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
@@ -59,7 +61,7 @@ export const App: React.FC = () => {
     if (!user) {
       setCloudReady(true)
       setCloudError(false)
-      if (currentPath === "/onboarding" || currentPath === "/workspace" || currentPath === "/database" || currentPath === "/github" || currentPath === "/vercel") {
+      if (currentPath === "/onboarding" || currentPath === "/workspace" || currentPath === "/database" || currentPath === "/github" || currentPath === "/vercel" || currentPath === "/vercel") {
         window.history.replaceState({}, "", "/signin")
         setCurrentPath("/signin")
       }
@@ -153,6 +155,10 @@ export const App: React.FC = () => {
   if (currentPath === "/github") {
     if (!authReady || !user) return <LoadingScreen />
     return <GitHubConnector user={user} />
+  }
+  if (currentPath === "/vercel") {
+    if (!authReady || !user) return <LoadingScreen />
+    return <VercelConnector user={user} />
   }
   if (currentPath === "/vercel") {
     if (!authReady || !user) return <LoadingScreen />
