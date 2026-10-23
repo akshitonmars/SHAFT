@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { createVercelState, vercelCallbackUrl, vercelClientId, sendVercelError, verifyUser } from "./vercelConnector.js"
+import { createVercelState, vercelCallbackUrl, vercelClientId, sendVercelError, verifyUser } from "../vercelConnector.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store")
