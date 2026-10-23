@@ -11,7 +11,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     url.searchParams.set("redirect_uri", vercelCallbackUrl())
     url.searchParams.set("response_type", "code")
     url.searchParams.set("state", createVercelState(user.uid))
-    url.searchParams.set("scope", "openid email profile offline_access")
     return res.status(200).json({ authorizationUrl: url.toString() })
   } catch (error) {
     return sendVercelError(res, error)
