@@ -24,7 +24,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       body: new URLSearchParams({ grant_type: "authorization_code", client_id: vercelClientId(), client_secret: vercelClientSecret(), code, redirect_uri: vercelCallbackUrl() }),
     })
     const tokens = await response.json()
-    if (!response.ok || typeof tokens.access_token !== "string") throw new Error("Vercel token exchange failed. Check the OAuth app credentials and callback URL.")
+    if (!response.ok || typeof tokens.access_token !== "string") {
+      const providerError = typeof tokens.error === "string" ? tokens.error.slice(0, 120) : "no_access_token"
+      const providerMessage = typeof tokens.error_description === "string" ? tokens.error_description.slice(0, 240) : ""
+      throw new Error("Vercel token exchange failed (HTTP " + response.status + ", " + providerError + ")" + (providerMessage ? ": " + providerMessage : "."))
+    }
     let profile: Record<string, unknown> = {}
     try {
       const profileResponse = await fetch("https://api.vercel.com/login/oauth/userinfo", { headers: { Authorization: "Bearer " + tokens.access_token, Accept: "application/json" } })
@@ -42,6 +46,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.redirect(302, base + "/vercel?connected=1")
   } catch (error) {
     const message = error instanceof Error ? error.message : "Connection failed."
-    return res.redirect(302, base + "/vercel?error=" + (/not configured/.test(message) ? "configuration_required" : "connection_failed"))
+    console.error("[SHAFT Vercel OAuth] Callback failed", {
+      name: error instanceof Error ? error.name : typeof error,
+      message: message.slice(0, 400),
+    })
+    return res.redirect(302, base + "/vercel?error=" + (/not configured|Missing FIREBASE_SERVICE_ACCOUNT_JSON/.test(message) ? "configuration_required" : "connection_failed"))
   }
 }
