@@ -13,7 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     })
     const result = await response.json()
     if (response.status === 401) {
-      await connection.doc.delete()
+      await connection.doc.ref.delete()
       return res.status(401).json({ error: "Your GitHub session expired. Connect GitHub again." })
     }
     if (!response.ok || !Array.isArray(result)) throw new Error("GitHub could not return your repositories. Check the authorized account and try again.")
