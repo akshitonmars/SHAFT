@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { appUrl, firestore, sendError, verifyState } from "../../_lib/supabaseConnector.js"
+import { appUrl, firestore, verifyState } from "../../_lib/supabaseConnector.js"
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("Cache-Control", "no-store")
