@@ -34,7 +34,11 @@ export function VercelConnector({ user }: { user: User }) {
     const params = new URLSearchParams(window.location.search)
     if (params.get("connected") === "1") setMessage("Vercel connected successfully.")
     else if (params.get("error") === "configuration_required") setMessage("Vercel OAuth is not configured. Check VERCEL_CLIENT_ID and VERCEL_CLIENT_SECRET.")
-    else if (params.get("error")) setMessage("Vercel authorization failed. Check the registered callback URL and app permissions.")
+    else if (params.get("error")) {
+      const providerError = params.get("provider_error")
+      const providerMessage = params.get("provider_message")
+      setMessage(providerError ? "Vercel rejected authorization (" + providerError + ")." + (providerMessage ? " Details: " + providerMessage : "") : "Vercel authorization failed. Check the Vercel OAuth app settings.")
+    }
     if (params.has("connected") || params.has("error")) window.history.replaceState({}, "", "/vercel")
     void load()
   }, [load])
