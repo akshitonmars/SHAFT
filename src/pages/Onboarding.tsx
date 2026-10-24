@@ -1,74 +1,116 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useState } from "react"
+import type { FormEvent, ReactNode } from "react"
 import type { User } from "firebase/auth"
-import {
-  ArrowLeft, ArrowRight, Check, Database, FolderPlus, Layers3,
-  Lightbulb, Plug, Sparkles, Triangle, Zap,
-} from "lucide-react"
 import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject, ShaftUserData } from "../lib/onboarding"
+import AuroraBackground from "../components/auth/AuroraBackground"
+import { fetchStatus, getAuthorizationUrl, rememberReturn } from "../lib/connectors"
+import type { ConnectorId } from "../lib/connectors"
 
 interface OnboardingProps {
   user: User
   onFinish: () => void
 }
 
-const roles = ["Founder", "Developer", "Designer", "Student", "Indie Maker", "Other"]
+const ROLES = ["Founder", "Developer", "Designer", "Student", "Indie maker", "Other"]
+const STEPS = ["Welcome", "Profile", "Project", "Tools"]
+const NEXT = ["Tell us a little about you", "Name your first project", "Preview the tools you’ll connect"]
+
+type ConnState = { state: "loading" | "connected" | "disconnected"; label?: string; reconnect?: boolean; busy?: boolean }
+const initialConn: Record<ConnectorId, ConnState> = { github: { state: "loading" }, vercel: { state: "loading" }, supabase: { state: "loading" } }
+const CONNECTORS: { id: ConnectorId; name: string; text: string; icon: ReactNode }[] = [
+  { id: "github", name: "GitHub", text: "Repositories, commits and pull requests.", icon: <GitHubMark /> },
+  { id: "vercel", name: "Vercel", text: "Hosting, deployments and delivery.", icon: <VercelMark /> },
+  { id: "supabase", name: "Supabase", text: "Backend, database and project data.", icon: <SupabaseMark /> },
+]
+
+const CSS = `
+@import url("https://fonts.googleapis.com/css2?family=Amaranth:wght@400;700&family=Inter:wght@400;500;600&display=swap");
+@keyframes obRise { from { opacity: 0; filter: blur(8px); transform: translateY(14px); } to { opacity: 1; filter: none; transform: none; } }
+.ob-rise { animation: obRise 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+@media (prefers-reduced-motion: reduce) { .ob-rise { animation: none; } }
+`
+
+const primary =
+  "inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-[#101319] px-7 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_12px_30px_rgba(16,19,25,0.25)] transition-[transform,background-color] duration-300 hover:-translate-y-0.5 hover:bg-[#1a2030] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F7FB]"
+const ghost =
+  "inline-flex h-12 items-center justify-center rounded-full px-5 text-[15px] font-medium text-slate-500 transition-colors hover:text-[#101319] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
+const panel = "rounded-[28px] border border-white/80 bg-white/60 p-6 shadow-[0_20px_60px_rgba(40,60,140,0.12)] backdrop-blur-2xl sm:p-8"
+const field =
+  "mt-2 w-full rounded-2xl border border-slate-900/10 bg-white/80 px-4 text-[15px] outline-none transition placeholder:text-slate-400 focus:border-[#648EFF] focus:ring-4 focus:ring-[#648EFF]/15"
 
 export function Onboarding({ user, onFinish }: OnboardingProps) {
+  const fallbackName = user.displayName || (user.email ? user.email.split("@")[0] : "")
   const initial = readUserData(user.uid)
   const [step, setStep] = useState(Math.min(initial.onboardingStep, 3))
   const [saved, setSaved] = useState(initial)
-  const [name, setName] = useState(initial.name || user.displayName || (user.email ? user.email.split("@")[0] : ""))
+  const [name, setName] = useState(initial.name || fallbackName)
   const [role, setRole] = useState(initial.role)
   const [projectName, setProjectName] = useState("")
   const [description, setDescription] = useState("")
   const [error, setError] = useState("")
   const [busy, setBusy] = useState(false)
   const [cloudReady, setCloudReady] = useState(false)
+  const [notice, setNotice] = useState("")
+  const [conn, setConn] = useState(initialConn)
+
   useEffect(() => {
     let active = true
-    loadUserData(user.uid).then((data) => {
-      if (!active) return
-      setSaved(data); setStep(Math.min(data.onboardingStep, 3))
-      setName(data.name || user.displayName || (user.email ? user.email.split("@")[0] : ""))
-      setRole(data.role); setCloudReady(true)
-    }).catch(() => {
-      if (!active) return
-      setError("Couldn't load your cloud profile. Check your connection and try again."); setCloudReady(true)
-    })
-    return () => { active = false }
+    loadUserData(user.uid)
+      .then((data) => {
+        if (!active) return
+        setSaved(data)
+        setStep(Math.min(data.onboardingStep, 3))
+        setName(data.name || user.displayName || (user.email ? user.email.split("@")[0] : ""))
+        setRole(data.role)
+        setCloudReady(true)
+      })
+      .catch(() => {
+        if (!active) return
+        setError("Couldn’t load your profile. Check your connection and try again.")
+        setCloudReady(true)
+      })
+    return () => {
+      active = false
+    }
   }, [user.uid, user.displayName, user.email])
 
+  // Move focus to the new step's heading for keyboard and screen-reader users.
+  useEffect(() => {
+    if (cloudReady) document.getElementById("ob-title")?.focus({ preventScroll: true })
+  }, [step, cloudReady])
+
   const persist = async (patch: Partial<ShaftUserData>) => {
-    try { const next = await saveUserData(user.uid, patch); setSaved(next); setError(""); return true }
-    catch (err) { setError(err instanceof Error ? err.message : "Unable to save your setup to the cloud. Check your connection and try again."); return false }
+    try {
+      const next = await saveUserData(user.uid, patch)
+      setSaved(next)
+      setError("")
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to save your setup. Check your connection and try again.")
+      return false
+    }
   }
 
-  const goToStep = async (next: number) => { setBusy(true); if (await persist({ onboardingStep: next })) setStep(next); setBusy(false) }
+  const goToStep = async (next: number) => {
+    setBusy(true)
+    if (await persist({ onboardingStep: next })) setStep(next)
+    setBusy(false)
+  }
 
-  const continueProfile = async () => {
-    if (!name.trim()) {
-      setError("Add your name to continue.")
-      return
-    }
-    if (!role) {
-      setError("Choose the role that best describes you.")
-      return
-    }
+  const continueProfile = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!name.trim()) return setError("Add your name to continue.")
+    if (!role) return setError("Choose the role that best describes you.")
     setBusy(true)
     if (await persist({ name: name.trim(), role, onboardingStep: 2 })) setStep(2)
     setBusy(false)
   }
 
-  const createFirstProject = async () => {
-    if (!projectName.trim()) {
-      setError("Give your project a name, or skip this step for now.")
-      return
-    }
-    if (!description.trim()) {
-      setError("Add a short description for your project.")
-      return
-    }
+  const createFirstProject = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!projectName.trim()) return setError("Give your project a name, or skip this step for now.")
+    if (!description.trim()) return setError("Add a short description for your project.")
     const project: ShaftProject = {
       id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now()),
       name: projectName.trim(),
@@ -93,130 +135,284 @@ export function Onboarding({ user, onFinish }: OnboardingProps) {
     if (ok) onFinish()
   }
 
-  const back = () => {
-    if (step > 0) goToStep(step - 1)
+  const refreshConnectors = useCallback(async () => {
+    const ids: ConnectorId[] = ["github", "vercel", "supabase"]
+    const results = await Promise.allSettled(ids.map((id) => fetchStatus(user, id)))
+    setConn(
+      Object.fromEntries(
+        ids.map((id, i) => {
+          const r = results[i]
+          const ok = r && r.status === "fulfilled" ? r.value : null
+          return [id, { state: ok?.connected ? "connected" : "disconnected", label: ok?.label, reconnect: ok?.reconnectRequired }]
+        })
+      ) as Record<ConnectorId, ConnState>
+    )
+  }, [user])
+
+  useEffect(() => {
+    if (cloudReady && step === 3) void refreshConnectors()
+  }, [cloudReady, step, refreshConnectors])
+
+  // Coming back from a provider's authorization page.
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search)
+    const id = p.get("connector")
+    if (!id) return
+    const label = CONNECTORS.find((c) => c.id === id)?.name ?? "Connector"
+    setNotice(p.get("connected") === "1" ? label + " connected." : "Authorization with " + label + " wasn’t completed. You can try again.")
+    window.history.replaceState({}, "", "/onboarding")
+  }, [])
+
+  const setBusyFor = (id: ConnectorId, value: boolean) => setConn((c) => ({ ...c, [id]: { ...c[id], busy: value } }))
+
+  const connect = async (id: ConnectorId) => {
+    setError("")
+    setNotice("")
+    setBusyFor(id, true)
+    // Vercel installs in a popup, which must be opened directly from the click.
+    const popup = id === "vercel" ? window.open("about:blank", "shaft-vercel-integration", "popup,width=520,height=760") : null
+    if (id === "vercel" && !popup) {
+      setError("Allow pop-ups for Shaft to connect Vercel.")
+      setBusyFor(id, false)
+      return
+    }
+    try {
+      const url = await getAuthorizationUrl(user, id)
+      if (popup) {
+        popup.location.href = url
+        const poll = window.setInterval(() => {
+          if (popup.closed) {
+            window.clearInterval(poll)
+            setBusyFor(id, false)
+            void refreshConnectors()
+          }
+        }, 500)
+        return
+      }
+      rememberReturn("/onboarding", id)
+      window.location.assign(url)
+    } catch (err) {
+      popup?.close()
+      setError(err instanceof Error ? err.message : "Could not start the connection. Please try again.")
+      setBusyFor(id, false)
+    }
   }
+
+  const anyConnected = Object.values(conn).some((c) => c.state === "connected")
   const firstName = (name || user.displayName || "there").trim().split(/\s+/)[0] || "there"
-  const progress = [8, 34, 60, 84][step]
-  if (!cloudReady) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] text-sm text-slate-500">Loading your cloud setup…</main>
+  const shell = "relative min-h-[100svh] overflow-hidden bg-[#F5F7FB] text-[#101319]"
+
+  if (!cloudReady) {
+    return (
+      <main className={`${shell} grid place-items-center`} style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+        <style>{CSS}</style>
+        <AuroraBackground />
+        <p className="relative flex items-center gap-3 text-sm text-slate-600" role="status"><Spinner /> Loading your workspace…</p>
+      </main>
+    )
+  }
+
+  const title = "text-[clamp(34px,5vw,52px)] font-bold leading-[1.04] tracking-[-0.03em] outline-none"
+  const display = { fontFamily: "Amaranth, sans-serif" }
 
   return (
-    <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <a href="/" aria-label="SHAFT home" className="inline-flex items-center gap-2.5">
-          <img src="/logo.png" alt="" className="h-9 w-9 object-contain" />
-          <span className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span>
+    <main className={shell} style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+      <style>{CSS}</style>
+      <AuroraBackground />
+
+      <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-5 sm:px-10">
+        <a href="/" aria-label="Shaft home" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
+          <img src="/logo.png" alt="" className="h-[30px] w-[30px] object-contain" />
+          <span className="text-[24px] font-bold leading-none tracking-[-0.02em]" style={display}>Shaft</span>
         </a>
-        <div className="hidden items-center gap-3 sm:flex">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Workspace setup</span>
-          <span className="h-1 w-24 overflow-hidden rounded-full bg-slate-200"><span className="block h-full rounded-full bg-[#397D76] transition-all duration-500" style={{ width: progress + "%" }} /></span>
-          <span className="text-xs tabular-nums text-slate-500">{step + 1} / 4</span>
-        </div>
+        <p className="max-w-[50%] truncate text-sm text-slate-500">{user.email}</p>
       </header>
 
-      <div className="mx-auto flex min-h-[calc(100vh-76px)] w-full max-w-6xl items-center px-5 pb-12 pt-5 sm:px-8 sm:pb-16">
-        <section className="mx-auto w-full max-w-3xl">
-          {step > 0 && <button type="button" onClick={back} className="mb-8 inline-flex items-center gap-2 rounded-lg text-sm text-slate-500 transition hover:text-[#101319]"><ArrowLeft size={16} /> Back</button>}
-          {error && <p role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[580px] flex-col justify-center px-6 pb-16 pt-24">
+        <div className="flex items-center gap-4">
+          <div className="flex flex-1 gap-1.5" role="progressbar" aria-label="Setup progress" aria-valuemin={1} aria-valuemax={4} aria-valuenow={step + 1}>
+            {STEPS.map((label, i) => (
+              <span key={label} className="h-1 flex-1 overflow-hidden rounded-full bg-slate-900/10">
+                <span className={`block h-full rounded-full bg-gradient-to-r from-[#43B5FF] to-[#9A8CFF] transition-[width] duration-700 ${i <= step ? "w-full" : "w-0"}`} />
+              </span>
+            ))}
+          </div>
+          <span className="text-xs tabular-nums text-slate-500">{step + 1} of 4 · {STEPS[step]}</span>
+        </div>
+
+        <div key={step} className="ob-rise mt-10">
+          {step > 0 && (
+            <button type="button" disabled={busy} onClick={() => void goToStep(step - 1)} className="mb-6 inline-flex items-center gap-2 rounded-lg text-sm text-slate-500 transition-colors hover:text-[#101319] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
+              <Arrow dir="left" /> Back
+            </button>
+          )}
+
+          {error && (
+            <p role="alert" className="mb-6 rounded-2xl border border-red-200/70 bg-white/80 px-4 py-3 text-sm text-red-700 backdrop-blur">{error}</p>
+          )}
+
+          {notice && <p role="status" className="mb-6 rounded-2xl border border-emerald-200/70 bg-white/80 px-4 py-3 text-sm text-emerald-800 backdrop-blur">{notice}</p>}
 
           {step === 0 && (
-            <div className="grid items-center gap-12 md:grid-cols-[1.05fr_0.95fr]">
-              <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-[#78CFC4]/50 bg-white/70 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-[#346B65]"><Sparkles size={14} /> A new beginning</span>
-                <h1 className="mt-7 text-5xl font-semibold leading-[1.04] tracking-[-0.055em] sm:text-6xl" style={{ fontFamily: "Amaranth, sans-serif" }}>Welcome to<br />SHAFT<span className="text-[#4B948B]">.</span></h1>
-                <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600">Every great project starts with an idea. We're here to help you turn yours into reality.</p>
-                <p className="mt-3 text-sm text-slate-500">A little setup now. A clearer place to build next.</p>
-                <button type="button" onClick={() => goToStep(1)} className="mt-9 inline-flex h-12 items-center gap-3 rounded-full bg-[#101319] px-6 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:-translate-y-0.5 hover:bg-[#252B35]">Let's get started <ArrowRight size={17} /></button>
-              </div>
-              <div className="relative hidden min-h-[360px] items-center justify-center md:flex">
-                <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#78CFC4]/30" />
-                <div className="absolute left-1/2 top-1/2 h-56 w-56 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200" />
-                <div className="relative z-10 w-full max-w-[300px] space-y-3">
-                  <MiniStep icon={<Lightbulb size={19} />} tint="bg-[#EAF7F4] text-[#397D76]" title="An idea" subtitle="Something worth building" />
-                  <div className="ml-8"><MiniStep icon={<Layers3 size={19} />} tint="bg-slate-100 text-slate-700" title="A project" subtitle="A home for the moving parts" /></div>
-                  <div className="ml-16"><MiniStep icon={<Zap size={19} />} tint="bg-white text-[#397D76]" title="Real progress" subtitle="One step at a time" /></div>
-                </div>
-              </div>
-            </div>
+            <>
+              <h1 id="ob-title" tabIndex={-1} className={title} style={display}>Welcome to Shaft{firstName !== "there" ? `, ${firstName}` : ""}.</h1>
+              <p className="mt-4 max-w-[30rem] text-[17px] leading-relaxed text-slate-600">Let’s set up your workspace. It takes about a minute, and you can change everything later.</p>
+              <ol className="mt-8 divide-y divide-slate-900/10 border-y border-slate-900/10">
+                {NEXT.map((line, i) => (
+                  <li key={line} className="flex items-center gap-4 py-3.5 text-[15px] text-slate-700">
+                    <span className="w-5 text-sm tabular-nums text-slate-400">0{i + 1}</span>
+                    {line}
+                  </li>
+                ))}
+              </ol>
+              <button type="button" disabled={busy} onClick={() => void goToStep(1)} className={`${primary} mt-9`}>
+                {busy ? <Spinner /> : null} Get started <Arrow />
+              </button>
+            </>
           )}
 
           {step === 1 && (
-            <div className="mx-auto max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#397D76]">First, a little about you</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>Who are you, {firstName}?</h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">Let's make your SHAFT workspace feel like yours. You can change these details later.</p>
-              <div className="mt-9 rounded-3xl border border-white bg-white/80 p-5 shadow-[0_18px_55px_rgba(16,19,25,0.06)] sm:p-8">
-                <label className="block text-sm font-semibold text-slate-700">What should we call you?
-                  <input value={name} onChange={(event) => setName(event.target.value)} autoComplete="name" maxLength={80} placeholder="Your name" className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal outline-none transition placeholder:text-slate-400 focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" />
+            <>
+              <h1 id="ob-title" tabIndex={-1} className={title} style={display}>Who’s building, {firstName}?</h1>
+              <p className="mt-4 max-w-[30rem] text-[17px] leading-relaxed text-slate-600">This helps us tailor your workspace.</p>
+              <form onSubmit={(e) => void continueProfile(e)} className={`${panel} mt-8`}>
+                <label className="block text-sm font-medium">
+                  Your name
+                  <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={80} placeholder="Your name" className={`${field} h-12`} />
                 </label>
-                <div className="mt-7">
-                  <p className="text-sm font-semibold text-slate-700">Which best describes you?</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {roles.map((item) => {
-                      const selected = role === item
-                      return <button key={item} type="button" aria-pressed={selected} onClick={() => setRole(item)} className={"flex min-h-12 items-center justify-between gap-2 rounded-xl border px-3 text-left text-sm font-medium transition " + (selected ? "border-[#397D76] bg-[#EEF8F6] text-[#245C55] ring-2 ring-[#78CFC4]/20" : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50")}>{item}{selected && <Check size={15} />}</button>
+                <fieldset className="mt-6">
+                  <legend className="text-sm font-medium">What best describes you?</legend>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {ROLES.map((item) => {
+                      const on = role === item
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => setRole(item)}
+                          className={`inline-flex h-11 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-[background-color,border-color,color,transform] duration-200 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] ${on ? "border-[#101319] bg-[#101319] text-white" : "border-slate-900/10 bg-white/80 text-slate-600 hover:border-slate-900/25 hover:text-[#101319]"}`}
+                        >
+                          {on && <Tick />}
+                          {item}
+                        </button>
+                      )
                     })}
                   </div>
-                </div>
-                <button type="button" onClick={continueProfile} className="mt-8 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#101319] px-5 text-sm font-semibold text-white transition hover:bg-[#252B35] sm:w-auto">Continue <ArrowRight size={16} /></button>
-              </div>
-            </div>
+                </fieldset>
+                <button type="submit" disabled={busy} className={`${primary} mt-8 w-full sm:w-auto`}>
+                  {busy ? <Spinner /> : null} Continue <Arrow />
+                </button>
+              </form>
+            </>
           )}
 
           {step === 2 && (
-            <div className="mx-auto max-w-2xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#397D76]">Make it real</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>What are you building?</h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">Give your first project a name and a little context. You can refine it as it grows.</p>
-              <div className="mt-9 rounded-3xl border border-white bg-white/80 p-5 shadow-[0_18px_55px_rgba(16,19,25,0.06)] sm:p-8">
-                <label className="block text-sm font-semibold text-slate-700">Project name
-                  <input value={projectName} onChange={(event) => setProjectName(event.target.value)} maxLength={100} placeholder="e.g. My next big idea" className="mt-2 h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal outline-none transition placeholder:text-slate-400 focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" />
+            <>
+              <h1 id="ob-title" tabIndex={-1} className={title} style={display}>What are you building?</h1>
+              <p className="mt-4 max-w-[30rem] text-[17px] leading-relaxed text-slate-600">Name your first project and add a little context. You can refine it as it grows.</p>
+              <form onSubmit={(e) => void createFirstProject(e)} className={`${panel} mt-8`}>
+                <label className="block text-sm font-medium">
+                  Project name
+                  <input value={projectName} onChange={(e) => setProjectName(e.target.value)} maxLength={100} placeholder="e.g. Orbit" className={`${field} h-12`} />
                 </label>
-                <label className="mt-5 block text-sm font-semibold text-slate-700">Description
-                  <textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={1200} rows={4} placeholder="What are you trying to build, and why?" className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal leading-6 outline-none transition placeholder:text-slate-400 focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" />
+                <label className="mt-5 block text-sm font-medium">
+                  <span className="flex items-baseline justify-between">
+                    Description
+                    <span className="text-xs tabular-nums text-slate-400">{description.length}/1200</span>
+                  </span>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1200} rows={4} placeholder="What is it, and who is it for?" className={`${field} resize-y py-3 leading-6`} />
                 </label>
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button type="button" onClick={createFirstProject} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#101319] px-5 text-sm font-semibold text-white transition hover:bg-[#252B35]"><FolderPlus size={17} /> Create project <ArrowRight size={16} /></button>
-                  <button type="button" onClick={() => goToStep(3)} className="inline-flex h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-[#101319]">Skip for now</button>
+                <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <button type="submit" disabled={busy} className={primary}>
+                    {busy ? <Spinner /> : null} Create project <Arrow />
+                  </button>
+                  <button type="button" disabled={busy} onClick={() => void goToStep(3)} className={ghost}>Skip for now</button>
                 </div>
-              </div>
-            </div>
+              </form>
+            </>
           )}
 
           {step === 3 && (
-            <div className="mx-auto max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#397D76]">Bring your workflow together</p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>Let's connect your tools.</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">SHAFT is designed to bring the pieces of a project into one place. We'll set up these connections in a later step.</p>
-              <div className="mt-9 grid gap-4 sm:grid-cols-2">
-                <ConnectorCard icon={<Database size={22} />} iconClass="bg-[#E9F8F0] text-[#21845B]" name="Supabase" description="Backend, database and project data." />
-                <ConnectorCard icon={<Triangle size={20} fill="currentColor" />} iconClass="bg-slate-100 text-[#101319]" name="Vercel" description="Hosting, deployments and delivery." />
+            <>
+              <h1 id="ob-title" tabIndex={-1} className={title} style={display}>Your tools, in one place.</h1>
+              <p className="mt-4 max-w-[30rem] text-[17px] leading-relaxed text-slate-600">Shaft brings the parts of a project together. Connect the ones you use. You can add more later in Workspace settings.</p>
+              <div className="mt-8 space-y-3">
+                {CONNECTORS.map((c) => (
+                  <Connector key={c.id} icon={c.icon} name={c.name} text={c.text} conn={conn[c.id]} onConnect={() => void connect(c.id)} />
+                ))}
               </div>
-              <p className="mt-5 flex items-start gap-2 text-xs leading-5 text-slate-500"><Plug size={15} className="mt-0.5 shrink-0" /> These are previews only. No account access or credentials are requested, and neither tool is connected yet.</p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button type="button" disabled={busy} onClick={finish} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-[#101319] px-6 text-sm font-semibold text-white transition hover:bg-[#252B35] disabled:cursor-wait disabled:opacity-60">{busy ? "Finishing setup…" : "Continue to SHAFT"} <ArrowRight size={16} /></button>
-                <button type="button" disabled={busy} onClick={finish} className="inline-flex h-12 items-center justify-center rounded-xl px-4 text-sm font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-[#101319] disabled:opacity-50">Skip for now</button>
+              <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
+                <button type="button" disabled={busy} onClick={() => void finish()} className={primary}>
+                  {busy ? <Spinner /> : null} {busy ? "Finishing…" : "Continue to Shaft"} {!busy && <Arrow />}
+                </button>
+                {!anyConnected && <button type="button" disabled={busy} onClick={() => void finish()} className={ghost}>Skip for now</button>}
               </div>
-            </div>
+            </>
           )}
-
-          <p className="mt-12 border-t border-slate-200/80 pt-4 text-xs leading-5 text-slate-400">Your setup and projects are currently saved in this browser on this device. Cloud sync is not connected yet.</p>
-        </section>
+        </div>
       </div>
     </main>
   )
 }
 
-function MiniStep({ icon, tint, title, subtitle }: { icon: ReactNode; tint: string; title: string; subtitle: string }) {
-  return <div className="rounded-2xl border border-white bg-white/90 p-4 shadow-[0_18px_50px_rgba(16,19,25,0.07)]"><div className="flex items-center gap-3"><span className={"grid h-10 w-10 place-items-center rounded-xl " + tint}>{icon}</span><span><span className="block font-semibold">{title}</span><span className="mt-0.5 block text-xs text-slate-500">{subtitle}</span></span></div></div>
+function Connector({ icon, name, text, conn, onConnect }: { icon: ReactNode; name: string; text: string; conn: ConnState; onConnect: () => void }) {
+  return (
+    <div className="flex items-center gap-4 rounded-3xl border border-white/80 bg-white/60 p-4 shadow-[0_16px_44px_rgba(40,60,140,0.1)] backdrop-blur-2xl">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-slate-900/[0.06] bg-white shadow-sm">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <h2 className="text-[17px] font-semibold tracking-tight">{name}</h2>
+        <p className="truncate text-sm text-slate-500">{conn.state === "connected" && conn.label ? conn.label : text}</p>
+      </div>
+      {conn.state === "loading" ? (
+        <span className="text-slate-400"><Spinner /></span>
+      ) : conn.state === "connected" ? (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-700"><Tick /> Connected</span>
+      ) : (
+        <button
+          type="button"
+          onClick={onConnect}
+          disabled={conn.busy}
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[#101319] px-5 text-sm font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-[transform,background-color] duration-300 hover:-translate-y-0.5 hover:bg-[#1a2030] active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#F5F7FB]"
+        >
+          {conn.busy && <Spinner />}
+          {conn.reconnect ? "Reconnect" : "Connect"}
+        </button>
+      )}
+    </div>
+  )
 }
 
-function ConnectorCard({ icon, iconClass, name, description }: { icon: ReactNode; iconClass: string; name: string; description: string }) {
-  return <div className="rounded-2xl border border-white bg-white/80 p-5 shadow-[0_15px_45px_rgba(16,19,25,0.05)]">
-    <div className="flex items-start justify-between gap-3"><span className={"grid h-12 w-12 place-items-center rounded-2xl " + iconClass}>{icon}</span><span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500"><span className="h-1.5 w-1.5 rounded-full bg-slate-400" /> Not connected</span></div>
-    <h2 className="mt-5 text-lg font-semibold tracking-tight">{name}</h2><p className="mt-1 min-h-10 text-sm leading-6 text-slate-500">{description}</p>
-    <button type="button" disabled className="mt-4 inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-400"><Plug size={14} /> Setup coming later</button>
-  </div>
+function Arrow({ dir = "right" }: { dir?: "left" | "right" }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={`h-[18px] w-[18px] ${dir === "left" ? "rotate-180" : ""}`}>
+      <path d="M4 10h12M11 5l5 5-5 5" />
+    </svg>
+  )
+}
+function Tick() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+      <path d="M4.5 10.5l3.5 3.5 7.5-8" />
+    </svg>
+  )
+}
+function Spinner() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-[18px] w-[18px] animate-spin">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+    </svg>
+  )
+}
+function VercelMark() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="#000" className="h-5 w-5"><path d="m12 1.608 12 20.784H0Z" /></svg>
+}
+function SupabaseMark() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="#3FCF8E" className="h-6 w-6"><path d="M21.362 9.354H12V.396a.396.396 0 0 0-.716-.233L2.203 12.424l-.401.562a1.04 1.04 0 0 0 .836 1.659H12V21.6a.396.396 0 0 0 .716.233l9.081-12.261.401-.562a1.04 1.04 0 0 0-.836-1.656z" /></svg>
+}
+function GitHubMark() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="#101319" className="h-6 w-6"><path d="M12 .8a11.2 11.2 0 0 0-3.54 21.83c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 .1.76 2.4 3.03 1.82.1-.73.4-1.22.72-1.5-2.5-.28-5.13-1.25-5.13-5.56 0-1.23.44-2.24 1.16-3.03-.12-.29-.5-1.44.11-3 0 0 .95-.3 3.08 1.16a10.7 10.7 0 0 1 5.6 0c2.13-1.45 3.08-1.16 3.08-1.16.61 1.56.23 2.71.11 3 .72.79 1.16 1.8 1.16 3.03 0 4.32-2.63 5.28-5.14 5.56.4.35.76 1.03.76 2.08v3.1c0 .3.2.65.77.54A11.2 11.2 0 0 0 12 .8Z" /></svg>
 }
 
 export default Onboarding
