@@ -17,9 +17,11 @@ import { GitHubConnector } from "./pages/GitHubConnector"
 import { VercelConnector } from "./pages/VercelConnector"
 import { auth } from "./lib/firebase"
 import { loadUserData } from "./lib/onboarding"
+import { applyConnectReturn } from "./lib/connectors"
 
 function getInitialPath(): string {
   if (typeof window === "undefined") return "/"
+  applyConnectReturn()
   const pathname = window.location.pathname
   if (pathname === "/auth/callback") return "/auth/callback"
   if (pathname === "/signin") return "/signin"
