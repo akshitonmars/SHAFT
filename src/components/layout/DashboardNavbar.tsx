@@ -1,5 +1,3 @@
-import type { MouseEvent } from "react"
-
 interface DashboardNavbarProps {
   displayName: string
   initials: string
