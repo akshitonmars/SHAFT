@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
-import type { VercelRequest, VercelResponse } from "@vercel/node"
+import type { VercelResponse } from "@vercel/node"
 import { firestore, verifyUser } from "./supabaseConnector.js"
 
 export { firestore, verifyUser }
@@ -32,8 +32,8 @@ export function createGithubState(uid: string) {
 export function verifyGithubState(state: string) {
   const [payload, signature, extra] = state.split(".")
   if (!payload || !signature || extra) throw new Error("Invalid GitHub OAuth state.")
-  const expected = Buffer.from(sign(payload))
-  const actual = Buffer.from(signature)
+  const expected = Uint8Array.from(Buffer.from(sign(payload)))
+  const actual = Uint8Array.from(Buffer.from(signature))
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) throw new Error("Invalid GitHub OAuth state.")
   const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"))
   if (typeof decoded.uid !== "string" || typeof decoded.exp !== "number" || decoded.exp < Date.now()) {
