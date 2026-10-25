@@ -1,8 +1,25 @@
+import type { CSSProperties } from "react"
+
 interface DashboardNavbarProps {
   displayName: string
   initials: string
   photoURL?: string | null
   onProfileClick: () => void
+}
+
+const PILL_SHINE: CSSProperties = {
+  borderRadius: "inherit",
+  padding: "1.5px",
+  background:
+    "linear-gradient(135deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.65) 14%, rgba(255,255,255,0) 36%, rgba(255,255,255,0) 64%, rgba(255,255,255,0.65) 86%, rgba(255,255,255,1) 100%)",
+  WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+  WebkitMaskComposite: "xor",
+  mask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+  maskComposite: "exclude",
+}
+
+function PillShine() {
+  return <span aria-hidden="true" style={PILL_SHINE} className="pointer-events-none absolute inset-0" />
 }
 
 export default function DashboardNavbar({
@@ -11,44 +28,65 @@ export default function DashboardNavbar({
   photoURL,
   onProfileClick,
 }: DashboardNavbarProps) {
-  return (
-    <header className="fixed inset-x-3 top-3 z-40 flex h-[64px] items-center justify-between rounded-full border border-slate-200/80 bg-white/90 px-4 shadow-[0_10px_35px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:inset-x-5 sm:px-6">
-      <a
-        href="/"
-        aria-label="SHAFT home"
-        className="flex shrink-0 items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
-      >
-        <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
-        <span
-          className="text-[23px] font-bold tracking-tight text-[#101319]"
-          style={{ fontFamily: "Amaranth, sans-serif" }}
-        >
-          Shaft
-        </span>
-      </a>
+  const pillClass =
+    "relative flex h-12 shrink-0 items-center rounded-full border border-black/[0.08] bg-white/75 shadow-[0_6px_24px_rgba(15,23,42,0.06)] backdrop-blur-xl"
 
-      <button
-        type="button"
-        onClick={onProfileClick}
-        aria-label="Open profile"
-        className="group flex min-w-0 items-center gap-2.5 rounded-full py-1 pl-3 pr-1 outline-none transition-colors hover:bg-slate-100/80 focus-visible:ring-2 focus-visible:ring-[#43B5FF] sm:gap-3 sm:pl-4"
-      >
-        <span className="max-w-[38vw] truncate text-sm font-medium text-slate-700 transition-colors group-hover:text-[#101319] sm:max-w-[220px]">
-          {displayName}
-        </span>
-        {photoURL ? (
-          <img
-            src={photoURL}
-            alt=""
-            referrerPolicy="no-referrer"
-            className="h-10 w-10 shrink-0 rounded-full border border-slate-200 object-cover"
-          />
-        ) : (
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[#D9ECE8] bg-[#EAF7F4] text-xs font-semibold text-[#245C55] transition-colors group-hover:bg-[#DDF1EC]">
-            {initials}
+  return (
+    <header className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center px-3 sm:px-5">
+      <div className="pointer-events-none flex w-full max-w-[1180px] items-center justify-between gap-3 p-0">
+        {/* Separate left branding pill, matching the landing navbar */}
+        <div className={`${pillClass} pointer-events-auto justify-self-start px-4`}>
+          <PillShine />
+          <a
+            href="/"
+            aria-label="SHAFT home"
+            className="relative flex shrink-0 items-center gap-2.5 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]"
+          >
+            <img
+              src="/logo.png"
+              alt=""
+              width={34}
+              height={34}
+              className="h-[30px] w-[30px] object-contain transition-transform duration-300 hover:scale-105"
+            />
+            <span
+              className="text-[24px] font-bold leading-none tracking-[-0.02em] text-[#101319]"
+              style={{ fontFamily: "Amaranth, sans-serif" }}
+            >
+              Shaft
+            </span>
+          </a>
+        </div>
+
+        {/* Deliberately empty centre: keep the two-pill layout */}
+        <div className="min-w-0 flex-1" aria-hidden="true" />
+
+        {/* Separate right profile pill */}
+        <button
+          type="button"
+          onClick={onProfileClick}
+          aria-label="Open profile"
+          title="Open profile"
+          className={`${pillClass} pointer-events-auto max-w-[58vw] gap-2.5 px-2 pr-2 transition-colors hover:border-black/[0.12] hover:bg-white/95 sm:gap-3 sm:pl-4`}
+        >
+          <PillShine />
+          <span className="relative max-w-[32vw] truncate pl-2 text-sm font-medium text-slate-700 sm:max-w-[220px] sm:pl-0">
+            {displayName}
           </span>
-        )}
-      </button>
+          {photoURL ? (
+            <img
+              src={photoURL}
+              alt=""
+              referrerPolicy="no-referrer"
+              className="relative h-9 w-9 shrink-0 rounded-full border border-slate-200 object-cover"
+            />
+          ) : (
+            <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[#D9ECE8] bg-[#EAF7F4] text-xs font-semibold text-[#245C55]">
+              {initials}
+            </span>
+          )}
+        </button>
+      </div>
     </header>
   )
 }
