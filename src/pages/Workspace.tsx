@@ -11,6 +11,7 @@ import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
 import DashboardNavbar from "../components/layout/DashboardNavbar"
 import UniversalSidebar from "../components/layout/UniversalSidebar"
+import Loader from "../components/ui/Loader"
 
 interface WorkspaceProps { user: User }
 type View = "Overview" | "My Spaces" | "Ideas" | "SHAFT AI" | "Artifacts" | "Tasks" | "Connectors" | "Settings"
@@ -189,6 +190,12 @@ export function Workspace({ user }: WorkspaceProps) {
           <DashboardNavbar displayName={displayName} initials={initials} photoURL={user.photoURL} onProfileClick={() => setView("Settings")} />
 
           <div className="mx-auto max-w-[1320px] px-5 pb-8 pt-24 sm:px-8 sm:pb-10 sm:pt-28">
+            {!cloudReady ? (
+              <div className="flex min-h-[60vh] items-center justify-center">
+                <Loader size={56} label="Loading your workspace…" delay={200} />
+              </div>
+            ) : (
+              <>
             <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-[#E0EBE9] bg-[#F0F8F6] px-4 py-3 sm:flex-row sm:items-center"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#397D76]"><CircleHelp size={17} /></div><p className="text-xs leading-5 text-slate-600"><strong className="font-semibold text-[#245C55]">Cloud workspace:</strong> your profile and projects sync to your SHAFT account. Connect your tools below to bring your project stack into SHAFT.</p></div>
 
             {view === "Overview" && <>
@@ -230,6 +237,8 @@ export function Workspace({ user }: WorkspaceProps) {
             {view === "Ideas" && <Placeholder icon={<Lightbulb size={23} />} eyebrow="Capture and shape" title="Give your ideas a place to grow." text="Idea capture and the path from an idea to a project are planned for a later phase. For now, start a project and keep its purpose in the description." action="Start a Space" onAction={() => setShowCreate(true)} />}
             {view === "SHAFT AI" && <Placeholder icon={<Bot size={23} />} eyebrow="Your project companion" title="SHAFT AI is taking shape." text="AI provider connections and project-aware assistance will be added next. No AI provider is connected in this preview." action="View my projects" onAction={() => setView("My Spaces")} />}
             {view === "Settings" && <section className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">Your account</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em]" style={{ fontFamily: "Amaranth, sans-serif" }}>Settings</h1><div className="mt-7 rounded-2xl border border-slate-200 bg-white p-6"><p className="text-sm font-semibold">Connected tools</p><div className="mt-4 flex flex-col gap-4 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-[#397D76]"><Database size={20} /></span><div className="min-w-0 flex-1"><p className="font-semibold">Supabase</p><p className="mt-1 text-sm leading-5 text-slate-500">{connectorStatus === "loading" ? "Checking connection…" : connectorStatus === "connected" ? "Connected. SHAFT can read your projects." : "Connect your Supabase account securely with OAuth."}</p></div>{connectorStatus === "connected" ? <button type="button" disabled={connectorBusy} onClick={() => void disconnectSupabase()} className="h-10 shrink-0 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-600 disabled:opacity-50">{connectorBusy ? "Working…" : "Disconnect"}</button> : <button type="button" disabled={connectorBusy || connectorStatus === "loading"} onClick={() => void connectSupabase()} className="h-10 shrink-0 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-50">{connectorBusy ? "Connecting…" : "Connect Supabase"}</button>}</div>{connectorMessage && <p role="status" className="mt-3 break-words rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-600">{connectorMessage}</p>}{connectorStatus === "connected" && <div className="mt-5"><p className="text-sm font-semibold">Your Supabase projects</p>{supabaseProjects.length ? <div className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-100">{supabaseProjects.map((project) => <div key={project.id} className="flex items-center justify-between gap-3 px-3 py-3"><div className="min-w-0"><p className="truncate text-sm font-medium">{project.name}</p><p className="mt-1 text-xs text-slate-400">{project.region || "Region unavailable"}{project.status ? " · " + project.status : ""}</p></div><span className="rounded-full bg-[#EAF7F4] px-2.5 py-1 text-xs font-medium text-[#245C55]">Supabase</span></div>)}</div> : <p className="mt-2 text-sm text-slate-500">No projects were returned for this account.</p>}</div>}<p className="mt-6 text-sm font-semibold">Profile</p><dl className="mt-5 space-y-4 text-sm"><Setting label="Name" value={displayName} /><Setting label="Email" value={user.email || "Not provided by sign-in provider"} /><Setting label="Role" value={data.role || "Not selected"} /><Setting label="Data storage" value="Firebase Cloud Firestore" /></dl></div><button type="button" onClick={() => void leave()} disabled={signingOut} className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition hover:text-[#101319] disabled:opacity-50"><LogOut size={16} /> Sign out</button></section>}
+              </>
+            )}
           </div>
         </div>
       </div>
