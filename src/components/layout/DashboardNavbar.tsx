@@ -33,7 +33,7 @@ export default function DashboardNavbar({
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-3 z-50 flex justify-center px-3 sm:px-5">
-      <div className="pointer-events-none flex w-full max-w-[1180px] items-center justify-between gap-3 p-0">
+      <div className="pointer-events-none flex w-full max-w-[1200px] items-center justify-between gap-3 p-0">
         {/* Separate left branding pill, matching the landing navbar */}
         <div className={`${pillClass} pointer-events-auto justify-self-start px-4`}>
           <PillShine />
