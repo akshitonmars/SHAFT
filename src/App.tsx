@@ -153,7 +153,7 @@ export const App: React.FC = () => {
   if (currentPath === "/signup") return <SignUp />
   if (currentPath === "/auth/callback") return <AuthCallback />
   if (cloudError) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] p-6 text-[#101319]"><div className="max-w-md rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-semibold">Could not load SHAFT cloud data</h1><p className="mt-2 text-sm leading-6 text-slate-600">Enable Cloud Firestore in Firebase and apply the user-only security rules, then retry.</p><button className="mt-4 rounded-xl bg-[#101319] px-4 py-2 text-sm font-semibold text-white" onClick={() => window.location.reload()}>Retry</button></div></main>
-  if (!cloudReady && user) return <LoadingScreen />
+  if (!cloudReady && user && currentPath !== "/workspace") return <LoadingScreen />
   if (currentPath === "/onboarding") {
     if (!authReady || !cloudReady || !user) return <LoadingScreen />
     return <Onboarding user={user} onFinish={() => navigateTo("/workspace", true)} />
