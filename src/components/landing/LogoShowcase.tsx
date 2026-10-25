@@ -15,12 +15,12 @@ const CSS = `
 @media (prefers-reduced-motion: reduce) { .lg-in, .lg-float, .lg-sweep, .lg-pulse { animation: none; } .lg-sweep { opacity: 0; } }
 `
 
-const BARS = [
+export const BARS = [
   "M411 130C405 145 405 165 405 180L405 1310C405 1318 406 1324 408 1328Q510 1230 632 1160L632 312Q520 238 411 130Z",
   "M730 368Q815 410 895 433L895 1052Q815 1075 730 1110Z",
   "M987 458Q1045 472 1099 477L1099 1018Q1045 1022 987 1032Z",
 ]
-const STOPS = [
+export const STOPS = [
   ["#BBDFFF", "#A9D6FF", "#1AA0FF"],
   ["#C0D8FF", "#CBC8FF", "#5AA8FF"],
   ["#25A2FF", "#A8D8FF", "#C2E2FF"],
