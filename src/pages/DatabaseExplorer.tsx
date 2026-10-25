@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 import { ArrowLeft, Database, Plus, RefreshCw, Table2 } from "lucide-react"
 import type { User } from "firebase/auth"
+import UniversalSidebar from "../components/layout/UniversalSidebar"
 
 type Project = { id: string; name: string; region?: string; status?: string }
 type TableInfo = { table_name: string }
@@ -95,7 +96,8 @@ export function DatabaseExplorer({ user }: { user: User }) {
     } finally { setSaving(false) }
   }
 
-  return <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+  return <UniversalSidebar activeItem="Connectors" displayName={user.displayName || (user.email ? user.email.split("@")[0] : "Builder")}>
+  <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
     <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-xl sm:px-8">
       <a href="/workspace" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#101319]"><ArrowLeft size={16} /> Workspace</a>
       <span className="inline-flex items-center gap-2 text-sm font-semibold"><Database size={17} className="text-[#397D76]" /> Database explorer</span>
@@ -132,5 +134,5 @@ export function DatabaseExplorer({ user }: { user: User }) {
       </div>
       <p className="mt-6 text-xs leading-5 text-slate-400">SHAFT never sends your Supabase access token to the browser. Database requests run through authenticated server endpoints. SQL access depends on the permissions you approved in Supabase OAuth.</p>
     </div>
-  </main>
+  </main></UniversalSidebar>
 }
