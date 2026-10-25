@@ -189,6 +189,11 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
               <a
                 key={item.label}
                 href={item.href}
+                onClick={(event) => {
+                  if (!onNavigate || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  event.preventDefault()
+                  onNavigate(item.label)
+                }}
                 aria-current={active ? "page" : undefined}
                 aria-label={collapsed ? item.label : undefined}
                 className={`${itemBase} ${shape} ${active ? "bg-slate-900/[0.06] text-[#101319]" : "text-slate-500 hover:bg-slate-900/[0.04] hover:text-[#101319]"}`}
