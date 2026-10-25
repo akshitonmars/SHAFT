@@ -55,11 +55,14 @@ export default function UniversalSidebar({
   overlayOpen = false,
 }: UniversalSidebarProps) {
   const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false
     try {
-      return typeof window !== "undefined" && window.localStorage.getItem("shaft-universal-sidebar-collapsed") === "true"
+      const saved = window.localStorage.getItem("shaft-universal-sidebar-collapsed")
+      if (saved !== null) return saved === "true"
     } catch {
-      return false
+      // Fall back to a viewport-based default if browser storage is unavailable.
     }
+    return window.matchMedia("(max-width: 1023px)").matches
   })
   const [localSigningOut, setLocalSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState(false)
@@ -114,7 +117,7 @@ export default function UniversalSidebar({
         className={[
           "fixed bottom-3 left-0 top-[76px] flex w-[272px] flex-col overflow-hidden rounded-r-[28px] border-y border-r border-slate-200/80 bg-white/95 shadow-[0_16px_48px_rgba(15,23,42,0.12)] backdrop-blur-2xl transition-[transform,box-shadow] duration-300 ease-out",
           panelHidden
-            ? "-translate-x-[calc(100%-18px)] z-10 shadow-none"
+            ? "-translate-x-[254px] z-10 shadow-none"
             : "translate-x-0 z-40",
         ].join(" ")}
       >
