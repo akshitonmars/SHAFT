@@ -9,6 +9,7 @@ import {
 import { auth } from "../lib/firebase"
 import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
+import DashboardNavbar from "../components/layout/DashboardNavbar"
 
 interface WorkspaceProps { user: User }
 type View = "Overview" | "My Projects" | "Ideas" | "SHAFT AI" | "Database" | "GitHub" | "Vercel" | "Settings"
@@ -172,21 +173,7 @@ export function Workspace({ user }: WorkspaceProps) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="fixed inset-x-3 top-3 z-40 flex h-[64px] items-center justify-between rounded-full border border-slate-200/80 bg-white/85 px-4 shadow-[0_10px_35px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:inset-x-5 sm:px-6">
-            <a href="/" aria-label="SHAFT home" className="flex shrink-0 items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
-              <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
-              <span className="text-[23px] font-bold tracking-tight text-[#101319]" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span>
-            </a>
-            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-              <span className="max-w-[38vw] truncate text-sm font-medium text-slate-700 sm:max-w-none">{displayName}</span>
-              <button type="button" onClick={() => setView("Settings")} aria-label="Open profile settings" title="Profile settings" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-xs font-semibold text-[#245C55] shadow-sm transition-colors hover:border-[#BCDAD5] hover:bg-[#F3FAF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
-                {initials}
-              </button>
-              <button type="button" onClick={() => void leave()} disabled={signingOut} aria-label="Sign out" title="Sign out" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#101319] disabled:opacity-50">
-                <LogOut size={16} />
-              </button>
-            </div>
-          </header>
+          <DashboardNavbar displayName={displayName} initials={initials} photoURL={user.photoURL} onProfileClick={() => setView("Settings")} />
 
           <div className="border-b border-slate-200/70 bg-white/50 px-4 py-2 lg:hidden"><nav className="flex gap-1 overflow-x-auto" aria-label="Mobile workspace navigation">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } if (item.label === "GitHub") { window.location.assign("/github"); return } setView(item.label); setQuery("") }} className={"inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium " + (view === item.label ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500")}><Icon size={14} />{item.label}</button> })}</nav></div>
 
