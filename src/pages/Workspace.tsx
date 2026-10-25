@@ -15,6 +15,17 @@ import UniversalSidebar from "../components/layout/UniversalSidebar"
 interface WorkspaceProps { user: User }
 type View = "Overview" | "My Spaces" | "Ideas" | "SHAFT AI" | "Artifacts" | "Tasks" | "Connectors" | "Settings"
 
+function viewFromItem(item: string): View {
+  switch (item) {
+    case "My Spaces": return "My Spaces"
+    case "Artifacts": return "Artifacts"
+    case "Tasks": return "Tasks"
+    case "Connectors": return "Connectors"
+    case "Settings": return "Settings"
+    default: return "Overview"
+  }
+}
+
 function initialWorkspaceView(): View {
   switch (new URLSearchParams(window.location.search).get("view")) {
     case "spaces": return "My Spaces"
@@ -123,6 +134,14 @@ export function Workspace({ user }: WorkspaceProps) {
   const displayName = data.name || user.displayName || (user.email ? user.email.split("@")[0] : "Builder")
   const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "S"
   const sidebarActiveItem = view === "My Spaces" || view === "Artifacts" || view === "Tasks" || view === "Connectors" || view === "Settings" ? view : "Overview"
+  const navigateSection = (item: string) => {
+    const nextView = viewFromItem(item)
+    const params = new URLSearchParams(window.location.search)
+    params.set("view", ({ "My Spaces": "spaces", Overview: "overview" } as Record<string, string>)[nextView] || nextView.toLowerCase())
+    window.history.pushState({}, "", `${window.location.pathname}?${params.toString()}`)
+    setView(nextView)
+    setShowCreate(false)
+  }
   const filteredProjects = data.projects.filter((project) => project.name.toLowerCase().includes(query.toLowerCase()) || project.description.toLowerCase().includes(query.toLowerCase()))
 
   const createProject = async (event: FormEvent<HTMLFormElement>) => {
@@ -161,10 +180,8 @@ export function Workspace({ user }: WorkspaceProps) {
     }
   }
 
-  if (!cloudReady) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] text-sm text-slate-500">Loading your cloud workspace…</main>
-
   return (
-    <UniversalSidebar activeItem={sidebarActiveItem} displayName={displayName} role={data.role || "SHAFT workspace"} onSignOut={() => void leave()} signingOut={signingOut} overlayOpen={showCreate}>
+    <UniversalSidebar activeItem={sidebarActiveItem} displayName={displayName} role={data.role || "SHAFT workspace"} onSignOut={() => void leave()} signingOut={signingOut} overlayOpen={showCreate} onNavigate={navigateSection}>
     <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="flex min-h-screen">
 
