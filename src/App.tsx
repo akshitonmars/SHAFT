@@ -18,6 +18,7 @@ import { VercelConnector } from "./pages/VercelConnector"
 import { auth } from "./lib/firebase"
 import { loadUserData } from "./lib/onboarding"
 import { applyConnectReturn } from "./lib/connectors"
+import Loader from "./components/ui/Loader"
 
 function getInitialPath(): string {
   if (typeof window === "undefined") return "/"
@@ -43,7 +44,7 @@ function getInitialPath(): string {
 }
 
 function LoadingScreen() {
-  return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}><div className="flex items-center gap-3 text-sm text-slate-500"><span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-[#397D76]" />Opening your SHAFT workspace…</div></main>
+  return <Loader fullscreen aurora label="Opening your Shaft workspace…" delay={200} />
 }
 
 export const App: React.FC = () => {
