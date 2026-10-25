@@ -164,8 +164,7 @@ export function Workspace({ user }: WorkspaceProps) {
     <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="flex min-h-screen">
         <aside className="hidden w-[248px] shrink-0 flex-col border-r border-slate-200/80 bg-white/70 p-5 lg:flex">
-          <a href="/" aria-label="SHAFT home" className="flex items-center gap-2.5"><img src="/logo.png" alt="" className="h-9 w-9 object-contain" /><span className="text-2xl font-bold tracking-tight" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span></a>
-          <div className="mt-10 flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-xs font-bold text-[#346B65]">{initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{displayName}</p><p className="truncate text-xs text-slate-500">{data.role || "SHAFT workspace"}</p></div></div>
+          <div className="mt-16 flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white p-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-xs font-bold text-[#346B65]">{initials}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{displayName}</p><p className="truncate text-xs text-slate-500">{data.role || "SHAFT workspace"}</p></div></div>
           <p className="mb-3 mt-9 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Workspace</p>
           <nav className="space-y-1" aria-label="Workspace navigation">{navItems.map((item) => { const Icon = item.icon; const active = view === item.label; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } if (item.label === "GitHub") { window.location.assign("/github"); return } if (item.label === "Vercel") { window.location.assign("/vercel"); return } setView(item.label); setQuery("") }} aria-current={active ? "page" : undefined} className={"flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition " + (active ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500 hover:bg-slate-100 hover:text-[#101319]")}><Icon size={17} /> {item.label}</button> })}</nav>
           <div className="mt-auto rounded-2xl border border-[#D9ECE8] bg-[#F3FAF8] p-4"><span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-[#397D76]"><Sparkles size={17} /></span><p className="mt-3 text-sm font-semibold">Build beyond ideas.</p><p className="mt-1 text-xs leading-5 text-slate-500">Your projects, tools and next steps will meet here.</p></div>
@@ -173,15 +172,25 @@ export function Workspace({ user }: WorkspaceProps) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-slate-200/80 bg-[#F5F7FB]/90 px-5 backdrop-blur-xl sm:px-8">
-            <div className="flex items-center gap-3 lg:hidden"><img src="/logo.png" alt="" className="h-8 w-8 object-contain" /><span className="text-xl font-bold" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span></div>
-            <div className="hidden text-sm text-slate-500 lg:block">Workspace <span className="mx-2 text-slate-300">/</span> <span className="font-semibold text-[#101319]">{view}</span></div>
-            <div className="ml-auto flex items-center gap-3"><span className="hidden rounded-full border border-slate-200 bg-white px-3 py-2 text-xs text-slate-500 sm:inline-flex sm:items-center sm:gap-2"><span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Cloud workspace</span><span className="grid h-9 w-9 place-items-center rounded-full bg-[#101319] text-xs font-semibold text-white" title={displayName}>{initials}</span><button type="button" onClick={() => void leave()} disabled={signingOut} aria-label="Sign out" className="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-500 transition hover:text-[#101319] disabled:opacity-50 lg:hidden"><LogOut size={16} /></button></div>
+          <header className="fixed inset-x-3 top-3 z-40 flex h-[64px] items-center justify-between rounded-full border border-slate-200/80 bg-white/85 px-4 shadow-[0_10px_35px_rgba(15,23,42,0.08)] backdrop-blur-2xl sm:inset-x-5 sm:px-6">
+            <a href="/" aria-label="SHAFT home" className="flex shrink-0 items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
+              <img src="/logo.png" alt="" className="h-8 w-8 object-contain" />
+              <span className="text-[23px] font-bold tracking-tight text-[#101319]" style={{ fontFamily: "Amaranth, sans-serif" }}>Shaft</span>
+            </a>
+            <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+              <span className="max-w-[38vw] truncate text-sm font-medium text-slate-700 sm:max-w-none">{displayName}</span>
+              <button type="button" onClick={() => setView("Settings")} aria-label="Open profile settings" title="Profile settings" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-white text-xs font-semibold text-[#245C55] shadow-sm transition-colors hover:border-[#BCDAD5] hover:bg-[#F3FAF8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
+                {initials}
+              </button>
+              <button type="button" onClick={() => void leave()} disabled={signingOut} aria-label="Sign out" title="Sign out" className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-[#101319] disabled:opacity-50">
+                <LogOut size={16} />
+              </button>
+            </div>
           </header>
 
           <div className="border-b border-slate-200/70 bg-white/50 px-4 py-2 lg:hidden"><nav className="flex gap-1 overflow-x-auto" aria-label="Mobile workspace navigation">{navItems.map((item) => { const Icon = item.icon; return <button key={item.label} type="button" onClick={() => { if (item.label === "Database") { window.location.assign("/database"); return } if (item.label === "GitHub") { window.location.assign("/github"); return } setView(item.label); setQuery("") }} className={"inline-flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium " + (view === item.label ? "bg-[#EAF7F4] text-[#245C55]" : "text-slate-500")}><Icon size={14} />{item.label}</button> })}</nav></div>
 
-          <div className="mx-auto max-w-[1320px] px-5 py-8 sm:px-8 sm:py-10">
+          <div className="mx-auto max-w-[1320px] px-5 pb-8 pt-24 sm:px-8 sm:pb-10 sm:pt-28">
             <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-[#E0EBE9] bg-[#F0F8F6] px-4 py-3 sm:flex-row sm:items-center"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-[#397D76]"><CircleHelp size={17} /></div><p className="text-xs leading-5 text-slate-600"><strong className="font-semibold text-[#245C55]">Cloud workspace:</strong> your profile and projects sync to your SHAFT account. Connect your tools below to bring your project stack into SHAFT.</p></div>
 
             {view === "Overview" && <>
