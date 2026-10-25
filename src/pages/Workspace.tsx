@@ -4,7 +4,7 @@ import { signOut } from "firebase/auth"
 import {
   ArrowRight, ArrowUpRight, Bot, Check, CircleHelp, Clock3, Code2,
   Database, Files, FolderKanban, Gauge, Lightbulb, LogOut,
-  Plus, Search, Settings, Sparkles, X, Github, Triangle,
+  Plus, Search, Sparkles, X, Github, Triangle,
 } from "lucide-react"
 import { auth } from "../lib/firebase"
 import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
