@@ -18,6 +18,7 @@ interface UniversalSidebarProps {
   role?: string
   onSignOut?: () => void
   signingOut?: boolean
+  onNavigate?: (item: UniversalSidebarItem) => void
 }
 
 const NAV: { label: UniversalSidebarItem; href: string }[] = [
@@ -119,7 +120,7 @@ function Ico({ children, style }: { children: ReactNode; style?: CSSProperties }
   )
 }
 
-export default function UniversalSidebar({ children, activeItem, overlayOpen = false }: UniversalSidebarProps) {
+export default function UniversalSidebar({ children, activeItem, overlayOpen = false, onNavigate }: UniversalSidebarProps) {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false
     try {
