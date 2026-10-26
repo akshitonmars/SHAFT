@@ -350,10 +350,13 @@ function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity, onDele
   saving: boolean
   onSave: (patch: Partial<ShaftProject>) => void
   onInitializeIdentity: (secret: string) => Promise<void>
+  onDelete: (secret: string, confirmName: string) => Promise<void>
 }) {
   const [name, setName] = useState(space.name)
   const [description, setDescription] = useState(space.description)
-  const [secret, setSecret] = useState("")\n  const [deleteSecret, setDeleteSecret] = useState("")\n  const [deleteName, setDeleteName] = useState("")
+  const [secret, setSecret] = useState("")
+  const [deleteSecret, setDeleteSecret] = useState("")
+  const [deleteName, setDeleteName] = useState("")
   const [savedSpaceId, setSavedSpaceId] = useState(space.id)
   const changed = name.trim() !== space.name || description.trim() !== space.description
   useEffect(() => {
