@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import type { User } from "firebase/auth"
 import { signOut } from "firebase/auth"
-import { Check, Plus, X } from "lucide-react"
+import { Check, X } from "lucide-react"
 import { auth } from "../lib/firebase"
 import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
 import type { ShaftProject } from "../lib/onboarding"
