@@ -28,10 +28,27 @@ function getInitialPath(): string {
   if (pathname === "/signin") return "/signin"
   if (pathname === "/signup" || pathname === "/get-started") return "/signup"
   if (pathname === "/onboarding") return "/onboarding"
-  if (pathname === "/workspace") return "/workspace"
-  if (pathname === "/database") return "/database"
-  if (pathname === "/github") return "/github"
-  if (pathname === "/vercel") return "/vercel"
+  if (pathname === "/workspace" || pathname.startsWith("/workspace/")) return "/workspace"
+  if (pathname === "/database" || pathname === "/github" || pathname === "/vercel") {
+    const params = new URLSearchParams(window.location.search)
+    if (pathname === "/vercel" && window.opener) {
+      if (params.get("connected") === "1") return "/auth/callback"
+      if (params.has("error")) {
+        window.opener.postMessage({
+          type: "shaft-vercel-oauth-result",
+          error: params.get("error"),
+          providerError: params.get("provider_error"),
+          providerMessage: params.get("provider_message"),
+        }, window.location.origin)
+        window.close()
+        return "/auth/callback"
+      }
+    }
+    const tab = pathname === "/github" ? "github" : pathname === "/vercel" ? "vercel" : "database"
+    params.set("tab", tab)
+    window.history.replaceState({}, "", "/workspace/connectors?" + params.toString())
+    return "/workspace"
+  }
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return "/privacy"
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
   if (pathname === "/docs" || pathname.startsWith("/docs/")) return "/docs"
@@ -152,7 +169,7 @@ export const App: React.FC = () => {
   if (currentPath === "/signin") return <SignIn />
   if (currentPath === "/signup") return <SignUp />
   if (currentPath === "/auth/callback") return <AuthCallback />
-  if (cloudError) return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] p-6 text-[#101319]"><div className="max-w-md rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-semibold">Could not load SHAFT cloud data</h1><p className="mt-2 text-sm leading-6 text-slate-600">Enable Cloud Firestore in Firebase and apply the user-only security rules, then retry.</p><button className="mt-4 rounded-xl bg-[#101319] px-4 py-2 text-sm font-semibold text-white" onClick={() => window.location.reload()}>Retry</button></div></main>
+  if (cloudError && currentPath !== "/workspace") return <main className="flex min-h-screen items-center justify-center bg-[#F5F7FB] p-6 text-[#101319]"><div className="max-w-md rounded-2xl border border-red-200 bg-white p-6"><h1 className="text-lg font-semibold">Could not load SHAFT cloud data</h1><p className="mt-2 text-sm leading-6 text-slate-600">Enable Cloud Firestore in Firebase and apply the user-only security rules, then retry.</p><button className="mt-4 rounded-xl bg-[#101319] px-4 py-2 text-sm font-semibold text-white" onClick={() => window.location.reload()}>Retry</button></div></main>
   if (!cloudReady && user && currentPath !== "/workspace") return <LoadingScreen />
   if (currentPath === "/onboarding") {
     if (!authReady || !cloudReady || !user) return <LoadingScreen />
