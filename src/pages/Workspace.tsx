@@ -127,6 +127,7 @@ export function Workspace({ user }: { user: User }) {
 
   useEffect(() => {
     const onPopState = () => {
+      setPageReady(false)
       setRoute(routeFromLocation())
       setShowCreate(false)
     }
@@ -138,6 +139,7 @@ export function Workspace({ user }: { user: User }) {
     if (nextRoute === route) return
     const href = routeHref(nextRoute)
     window.history.pushState({}, "", href)
+    setPageReady(false)
     setRoute(nextRoute)
     setShowCreate(false)
     setCreateError("")
