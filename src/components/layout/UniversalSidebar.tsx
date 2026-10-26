@@ -13,6 +13,8 @@ interface UniversalSidebarProps {
   children: ReactNode
   activeItem: UniversalSidebarItem
   overlayOpen?: boolean
+  /** Called with the item label on a plain click, so the page can switch views without a reload. */
+  onNavigate?: (item: string) => void
   /** Kept so existing callers still compile. The sidebar no longer shows these. */
   displayName?: string
   role?: string
@@ -119,7 +121,7 @@ function Ico({ children, style }: { children: ReactNode; style?: CSSProperties }
   )
 }
 
-export default function UniversalSidebar({ children, activeItem, overlayOpen = false }: UniversalSidebarProps) {
+export default function UniversalSidebar({ children, activeItem, overlayOpen = false, onNavigate }: UniversalSidebarProps) {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false
     try {
@@ -189,6 +191,11 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
                 key={item.label}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
+                onClick={(e) => {
+                  if (!onNavigate || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+                  e.preventDefault()
+                  onNavigate(item.label)
+                }}
                 aria-label={collapsed ? item.label : undefined}
                 className={`${itemBase} ${shape} ${active ? "bg-slate-900/[0.06] text-[#101319]" : "text-slate-500 hover:bg-slate-900/[0.04] hover:text-[#101319]"}`}
               >
