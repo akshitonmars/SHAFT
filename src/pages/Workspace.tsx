@@ -14,6 +14,7 @@ import {
   ArtifactsPage, OverviewPage, ProfilePage, SettingsPage, SpacesPage, TasksPage,
 } from "./workspace/WorkspaceViews"
 import { ConnectorsPage } from "./workspace/ConnectorsPage"
+import SpaceWorkspace from "./workspace/SpaceWorkspace"
 
 type WorkspaceRoute = "overview" | "spaces" | "artifacts" | "tasks" | "connectors" | "settings" | "profile"
 const routePaths: Record<WorkspaceRoute, string> = {
@@ -60,7 +61,7 @@ function routeHref(route: WorkspaceRoute) {
   return routePaths.connectors + (url.searchParams.has("tab") ? "?tab=" + url.searchParams.get("tab") : "")
 }
 
-export function Workspace({ user }: { user: User }) {
+function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: string) => void }) {
   const [data, setData] = useState(() => readUserData(user.uid))
   const [route, setRoute] = useState<WorkspaceRoute>(routeFromLocation)
   const [cloudReady, setCloudReady] = useState(false)
@@ -219,8 +220,8 @@ export function Workspace({ user }: { user: User }) {
             </div>
           ) : (
             <>
-              {route === "overview" && <OverviewPage data={data} displayName={displayName} connectedTools={connectedTools} onCreate={() => { setShowCreate(true); setCreateError("") }} onNavigate={navigate} />}
-              {route === "spaces" && <SpacesPage projects={data.projects} onCreate={() => { setShowCreate(true); setCreateError("") }} />}
+              {route === "overview" && <OverviewPage data={data} displayName={displayName} connectedTools={connectedTools} onCreate={() => { setShowCreate(true); setCreateError("") }} onNavigate={navigate} onOpenSpace={onOpenSpace} />}
+              {route === "spaces" && <SpacesPage projects={data.projects} onCreate={() => { setShowCreate(true); setCreateError("") }} onOpenSpace={onOpenSpace} />}
               {route === "artifacts" && <ArtifactsPage />}
               {route === "tasks" && <TasksPage />}
               {route === "connectors" && <ConnectorsPage user={user} />}
@@ -243,6 +244,48 @@ export function Workspace({ user }: { user: User }) {
       </main>
     </UniversalSidebar>
   )
+}
+
+
+function spaceIdFromPath(): string | null {
+  const match = window.location.pathname.match(/^\/workspace\/spaces\/([^/]+)(?:\/|$)/)
+  if (!match) return null
+  try { return decodeURIComponent(match[1]) } catch { return match[1] }
+}
+
+export function Workspace({ user }: { user: User }) {
+  const [activeSpaceId, setActiveSpaceId] = useState<string | null>(spaceIdFromPath)
+
+  useEffect(() => {
+    const syncPath = () => setActiveSpaceId(spaceIdFromPath())
+    window.addEventListener("popstate", syncPath)
+    return () => window.removeEventListener("popstate", syncPath)
+  }, [])
+
+  const openSpace = (id: string) => {
+    const path = "/workspace/spaces/" + encodeURIComponent(id) + "/dashboard"
+    window.history.pushState({}, "", path)
+    setActiveSpaceId(id)
+    window.scrollTo({ top: 0, behavior: "auto" })
+  }
+
+  const openWorkspacePath = (path: string) => {
+    window.history.pushState({}, "", path)
+    setActiveSpaceId(null)
+  }
+
+  if (activeSpaceId) {
+    return (
+      <SpaceWorkspace
+        user={user}
+        spaceId={activeSpaceId}
+        onExit={() => openWorkspacePath("/workspace/spaces")}
+        onOpenProfile={() => openWorkspacePath("/workspace/profile")}
+      />
+    )
+  }
+
+  return <WorkspaceHome user={user} onOpenSpace={openSpace} />
 }
 
 export default Workspace
