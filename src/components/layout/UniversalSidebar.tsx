@@ -11,7 +11,7 @@ export type UniversalSidebarItem =
 
 interface UniversalSidebarProps {
   children: ReactNode
-  activeItem: UniversalSidebarItem
+  activeItem: UniversalSidebarItem | null
   overlayOpen?: boolean
   /** Called with the item label on a plain click, so the page can switch views without a reload. */
   onNavigate?: (item: string) => void
@@ -23,12 +23,12 @@ interface UniversalSidebarProps {
 }
 
 const NAV: { label: UniversalSidebarItem; href: string }[] = [
-  { label: "Overview", href: "/workspace?view=overview" },
-  { label: "My Spaces", href: "/workspace?view=spaces" },
-  { label: "Artifacts", href: "/workspace?view=artifacts" },
-  { label: "Tasks", href: "/workspace?view=tasks" },
-  { label: "Connectors", href: "/workspace?view=connectors" },
-  { label: "Settings", href: "/workspace?view=settings" },
+  { label: "Overview", href: "/workspace/overview" },
+  { label: "My Spaces", href: "/workspace/spaces" },
+  { label: "Artifacts", href: "/workspace/artifacts" },
+  { label: "Tasks", href: "/workspace/tasks" },
+  { label: "Connectors", href: "/workspace/connectors" },
+  { label: "Settings", href: "/workspace/settings" },
 ]
 
 const delay = (s: number) => ({ "--d": `${s}s` }) as CSSProperties
@@ -238,7 +238,7 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
         </div>
       </aside>
 
-      <div className={`relative z-50 my-2 ml-[80px] h-[calc(100svh-16px)] overflow-x-hidden overflow-y-auto rounded-l-[28px] shadow-[-12px_0_32px_rgba(15,23,42,0.14)] transition-[margin,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[204px]"}`}>{children}</div>
+      <div className={`relative z-50 my-2 ml-[80px] h-[calc(100svh-16px)] overflow-hidden rounded-l-[28px] shadow-[-12px_0_32px_rgba(15,23,42,0.14)] transition-[margin,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[204px]"}`}>{children}</div>
     </>
   )
 }
