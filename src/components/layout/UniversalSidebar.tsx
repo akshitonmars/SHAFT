@@ -228,7 +228,7 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
         </div>
       </aside>
 
-      <div className={`relative z-20 min-h-screen ml-[76px] transition-[margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[240px]"}`}>{children}</div>
+      <div className={`relative z-50 min-h-screen ml-[60px] transition-[margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[224px]"}`}>{children}</div>
     </>
   )
 }
