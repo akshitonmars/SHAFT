@@ -28,10 +28,15 @@ function getInitialPath(): string {
   if (pathname === "/signin") return "/signin"
   if (pathname === "/signup" || pathname === "/get-started") return "/signup"
   if (pathname === "/onboarding") return "/onboarding"
-  if (pathname === "/workspace") return "/workspace"
-  if (pathname === "/database") return "/database"
-  if (pathname === "/github") return "/github"
-  if (pathname === "/vercel") return "/vercel"
+  if (pathname === "/workspace" || pathname.startsWith("/workspace/")) return "/workspace"
+  if (pathname === "/database" || pathname === "/github" || pathname === "/vercel") {
+    const params = new URLSearchParams(window.location.search)
+    if (pathname === "/vercel" && window.opener && params.get("connected") === "1") return "/auth/callback"
+    const tab = pathname === "/github" ? "github" : pathname === "/vercel" ? "vercel" : "database"
+    params.set("tab", tab)
+    window.history.replaceState({}, "", "/workspace/connectors?" + params.toString())
+    return "/workspace"
+  }
   if (pathname === "/privacy" || pathname.startsWith("/privacy/")) return "/privacy"
   if (pathname === "/terms" || pathname.startsWith("/terms/")) return "/terms"
   if (pathname === "/docs" || pathname.startsWith("/docs/")) return "/docs"
