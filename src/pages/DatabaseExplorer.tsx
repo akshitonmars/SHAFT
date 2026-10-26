@@ -7,7 +7,7 @@ type Project = { id: string; name: string; region?: string; status?: string }
 type TableInfo = { table_name: string }
 type ColumnInfo = { column_name: string; data_type: string; is_nullable: string }
 
-export function DatabaseExplorer({ user }: { user: User }) {
+export function DatabaseExplorer({ user, embedded = false }: { user: User; embedded?: boolean }) {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectRef, setProjectRef] = useState("")
   const [tables, setTables] = useState<TableInfo[]>([])
@@ -36,7 +36,7 @@ export function DatabaseExplorer({ user }: { user: User }) {
     setBusy(true); setError(""); setNotice("")
     try {
       const result = await request("/api/connectors/supabase/projects")
-      if (!result.connected) throw new Error("Connect Supabase in Workspace → Settings before opening the database.")
+      if (!result.connected) throw new Error("Connect Supabase from Workspace → Connectors before opening the database.")
       const available = (result.projects || []) as Project[]
       setProjects(available)
       setProjectRef((current) => current || available[0]?.id || "")
@@ -96,10 +96,10 @@ export function DatabaseExplorer({ user }: { user: User }) {
     } finally { setSaving(false) }
   }
 
-  return <UniversalSidebar activeItem="Connectors" displayName={user.displayName || (user.email ? user.email.split("@")[0] : "Builder")}>
-  <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+  const content = (
+  <main className={(embedded ? "min-h-0" : "min-h-screen") + " bg-[#F5F7FB] text-[#101319]"} style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
     <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur-xl sm:px-8">
-      <a href="/workspace" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#101319]"><ArrowLeft size={16} /> Workspace</a>
+      {!embedded && <a href="/workspace/overview" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-[#101319]"><ArrowLeft size={16} /> Workspace</a>}
       <span className="inline-flex items-center gap-2 text-sm font-semibold"><Database size={17} className="text-[#397D76]" /> Database explorer</span>
       <button type="button" onClick={() => projectRef ? void loadTables(projectRef) : void loadProjects()} disabled={busy} className="inline-flex h-9 items-center gap-2 rounded-xl border border-slate-200 px-3 text-xs font-semibold text-slate-600 disabled:opacity-50"><RefreshCw size={14} className={busy ? "animate-spin" : ""} /> Refresh</button>
     </header>
@@ -134,5 +134,7 @@ export function DatabaseExplorer({ user }: { user: User }) {
       </div>
       <p className="mt-6 text-xs leading-5 text-slate-400">SHAFT never sends your Supabase access token to the browser. Database requests run through authenticated server endpoints. SQL access depends on the permissions you approved in Supabase OAuth.</p>
     </div>
-  </main></UniversalSidebar>
+  </main>
+  )
+  return embedded ? content : <UniversalSidebar activeItem="Connectors" displayName={user.displayName || (user.email ? user.email.split("@")[0] : "Builder")}>{content}</UniversalSidebar>
 }
