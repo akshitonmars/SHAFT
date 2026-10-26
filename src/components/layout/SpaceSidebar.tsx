@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
-import { ArrowLeft, ChevronLeft, ChevronRight, Clock3, FolderKanban, LayoutDashboard, Link2, Settings2 } from "lucide-react"
+import { ArrowLeft, ChevronLeft, ChevronRight, Clock3, LayoutDashboard, Link2, Settings2 } from "lucide-react"
 import type { ShaftProject } from "../../lib/onboarding"
 
 export type SpaceTab = "dashboard" | "resources" | "history" | "settings"
