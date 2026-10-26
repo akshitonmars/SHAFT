@@ -183,7 +183,7 @@ export function Workspace({ user }: WorkspaceProps) {
 
   return (
     <UniversalSidebar activeItem={sidebarActiveItem} displayName={displayName} role={data.role || "SHAFT workspace"} onSignOut={() => void leave()} signingOut={signingOut} overlayOpen={showCreate} onNavigate={navigateSection}>
-    <main className="min-h-screen bg-[#F5F7FB] text-[#101319]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
+    <main className="min-h-screen rounded-l-[28px] bg-[#F5F7FB] text-[#101319] shadow-[-12px_0_32px_rgba(15,23,42,0.10)]" style={{ fontFamily: "Inter, system-ui, sans-serif" }}>
       <div className="flex min-h-screen">
 
         <div className="min-w-0 flex-1">
