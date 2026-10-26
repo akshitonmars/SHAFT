@@ -31,7 +31,19 @@ function getInitialPath(): string {
   if (pathname === "/workspace" || pathname.startsWith("/workspace/")) return "/workspace"
   if (pathname === "/database" || pathname === "/github" || pathname === "/vercel") {
     const params = new URLSearchParams(window.location.search)
-    if (pathname === "/vercel" && window.opener && params.get("connected") === "1") return "/auth/callback"
+    if (pathname === "/vercel" && window.opener) {
+      if (params.get("connected") === "1") return "/auth/callback"
+      if (params.has("error")) {
+        window.opener.postMessage({
+          type: "shaft-vercel-oauth-result",
+          error: params.get("error"),
+          providerError: params.get("provider_error"),
+          providerMessage: params.get("provider_message"),
+        }, window.location.origin)
+        window.close()
+        return "/auth/callback"
+      }
+    }
     const tab = pathname === "/github" ? "github" : pathname === "/vercel" ? "vercel" : "database"
     params.set("tab", tab)
     window.history.replaceState({}, "", "/workspace/connectors?" + params.toString())
