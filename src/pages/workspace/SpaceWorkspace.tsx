@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react"
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react"
 import type { User } from "firebase/auth"
 import {
-  ArrowRight, ArrowUpRight, Check, Clock3, Code2, ExternalLink, FolderKanban,
+  ArrowRight, ArrowUpRight, Check, Clock3, ExternalLink, FolderKanban,
   GitBranch, Layers3, Link2, Plus, RefreshCw, Settings2, Trash2, Triangle,
 } from "lucide-react"
-import { DashboardNavbar } from "../../components/layout/DashboardNavbar"
+import DashboardNavbar from "../../components/layout/DashboardNavbar"
 import SpaceSidebar, { type SpaceTab } from "../../components/layout/SpaceSidebar"
 import Loader from "../../components/ui/Loader"
 import { loadUserData, saveUserData } from "../../lib/onboarding"
@@ -177,7 +177,7 @@ export default function SpaceWorkspace({ user, spaceId, onExit, onOpenProfile }:
   )
 }
 
-function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) {
+function PageHeader({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return (
     <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">{eyebrow}</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>{title}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">{description}</p></div>
@@ -200,7 +200,7 @@ function SpaceDashboard({ space, onNavigate }: { space: ShaftProject; onNavigate
       <div className="mt-9 grid gap-5 lg:grid-cols-[1.35fr_1fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Connected resources</h2><p className="mt-1 text-sm text-slate-500">The external tools attached to this Space.</p></div><button type="button" onClick={() => onNavigate("resources")} className="text-sm font-semibold text-[#397D76] hover:text-[#245C55]">Manage <ArrowUpRight size={14} className="inline" /></button></div>
-          {resources.length ? <div className="mt-5 space-y-2">{resources.slice(0, 4).map((resource) => <ResourceRow key={resource.provider + resource.id} resource={resource} compact />)}</div> : <div className="mt-5 rounded-xl border border-dashed border-slate-300 px-4 py-7 text-center"><Link2 size={21} className="mx-auto text-slate-400" /><p className="mt-3 text-sm font-semibold">Nothing connected yet</p><p className="mt-1 text-xs leading-5 text-slate-500">Attach the GitHub repository, Vercel project, or Supabase project this Space uses.</p><button type="button" onClick={() => onNavigate("resources")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-[#101319] px-3 text-xs font-semibold text-white"><Plus size={14} /> Add resources</button></div>}
+          {resources.length ? <div className="mt-5 space-y-2">{resources.slice(0, 4).map((resource) => <ResourceRow key={resource.provider + resource.id} resource={resource} />)}</div> : <div className="mt-5 rounded-xl border border-dashed border-slate-300 px-4 py-7 text-center"><Link2 size={21} className="mx-auto text-slate-400" /><p className="mt-3 text-sm font-semibold">Nothing connected yet</p><p className="mt-1 text-xs leading-5 text-slate-500">Attach the GitHub repository, Vercel project, or Supabase project this Space uses.</p><button type="button" onClick={() => onNavigate("resources")} className="mt-4 inline-flex h-9 items-center gap-2 rounded-lg bg-[#101319] px-3 text-xs font-semibold text-white"><Plus size={14} /> Add resources</button></div>}
         </section>
         <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
           <div className="flex items-center justify-between gap-3"><div><h2 className="text-lg font-semibold">Recent history</h2><p className="mt-1 text-sm text-slate-500">The latest changes to this Space.</p></div><button type="button" onClick={() => onNavigate("history")} className="text-sm font-semibold text-[#397D76] hover:text-[#245C55]">View history <ArrowUpRight size={14} className="inline" /></button></div>
@@ -335,7 +335,7 @@ function HistoryTimeline({ space, limit }: { space: ShaftProject; limit?: number
   return <div className="mt-5 space-y-0">{shown.map((event, index) => <div key={event.id} className="relative flex gap-3 pb-6 last:pb-0"><div className="relative flex w-5 shrink-0 justify-center"><span className={"relative z-10 mt-1.5 h-2.5 w-2.5 rounded-full " + (index === 0 ? "bg-[#397D76]" : "bg-slate-300")} />{index < shown.length - 1 && <span className="absolute bottom-0 top-4 w-px bg-slate-200" />}</div><div className="min-w-0 flex-1"><p className="text-sm font-semibold text-[#101319]">{event.title}</p>{event.detail && <p className="mt-1 text-sm leading-5 text-slate-500">{event.detail}</p>}<p className="mt-1.5 text-xs text-slate-400">{new Date(event.createdAt).toLocaleString()}</p></div></div>)}</div>
 }
 
-function ResourceRow({ resource, compact = false }: { resource: SpaceResource; compact?: boolean }) {
+function ResourceRow({ resource }: { resource: SpaceResource }) {
   return <div className="flex min-w-0 items-center gap-3"><ProviderIcon provider={resource.provider} /><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{resource.name}</p><p className="mt-0.5 text-xs text-slate-400">{providerNames[resource.provider]}{resource.detail ? " · " + resource.detail : ""}</p></div>{resource.url && <a href={resource.url} target="_blank" rel="noreferrer" aria-label={"Open " + resource.name} className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#101319]"><ExternalLink size={15} /></a>}</div>
 }
 
