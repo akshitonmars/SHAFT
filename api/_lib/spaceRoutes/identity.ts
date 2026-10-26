@@ -1,6 +1,6 @@
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto"
+import { randomBytes, scryptSync } from "node:crypto"
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { firestore, sendError, verifyUser } from "../_lib/supabaseConnector"
+import { firestore, sendError, verifyUser } from "../supabaseConnector.js"
 
 const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 
@@ -17,7 +17,7 @@ function secretRecord(secret: string) {
   return { salt, hash, createdAt: new Date().toISOString(), algorithm: "scrypt" }
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handleIdentity(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." })
   try {
     const user = await verifyUser(req)

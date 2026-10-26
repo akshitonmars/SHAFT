@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
-import type { VercelRequest, VercelResponse } from "@vercel/node"
+import type { VercelResponse } from "@vercel/node"
 import { firestore, verifyUser } from "./supabaseConnector.js"
 
 export { firestore, verifyUser }

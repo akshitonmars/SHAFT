@@ -1,8 +1,8 @@
 import { scryptSync, timingSafeEqual } from "node:crypto"
 import type { VercelRequest, VercelResponse } from "@vercel/node"
-import { firestore, sendError, verifyUser } from "../_lib/supabaseConnector"
+import { firestore, sendError, verifyUser } from "../supabaseConnector.js"
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function handleDelete(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed." })
   try {
     const user = await verifyUser(req)
@@ -35,8 +35,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!secretSnap.exists) throw new Error("This Space has no Space Secret yet. Set its identity in Project Settings first.")
       const record = secretSnap.data() || {}
       if (typeof record.salt !== "string" || typeof record.hash !== "string") throw new Error("The Space Secret record is invalid.")
-      const actual = scryptSync(secret, record.salt, 64)
-      const expected = Buffer.from(record.hash, "hex")
+      const actual = new Uint8Array(scryptSync(secret, record.salt, 64))
+      const expected = new Uint8Array(Buffer.from(record.hash, "hex"))
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
         throw new Error("Incorrect Space Secret. The Space was not deleted.")
       }
