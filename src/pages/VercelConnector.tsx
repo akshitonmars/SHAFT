@@ -43,6 +43,21 @@ export function VercelConnector({ user, embedded = false }: { user: User; embedd
     if (params.has("connected") || params.has("error")) window.history.replaceState({}, "", embedded ? "/workspace/connectors?tab=vercel" : "/vercel")
     void load()
   }, [load])
+  useEffect(() => {
+    const handlePopupResult = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.data?.type !== "shaft-vercel-oauth-result") return
+      if (event.data.error === "configuration_required") {
+        setMessage("Vercel Integration Console settings are incomplete. Check VERCEL_CLIENT_ID, VERCEL_CLIENT_SECRET, and VERCEL_INTEGRATION_SLUG.")
+      } else if (event.data.providerError) {
+        setMessage("Vercel rejected authorization (" + event.data.providerError + ")." + (event.data.providerMessage ? " Details: " + event.data.providerMessage : ""))
+      } else {
+        setMessage("Vercel integration installation failed. Check the Integration Console settings and registered Redirect URL.")
+      }
+    }
+    window.addEventListener("message", handlePopupResult)
+    return () => window.removeEventListener("message", handlePopupResult)
+  }, [])
+
   const connect = async () => {
     setBusy(true); setMessage("")
     // Open synchronously from the button click so the browser allows the integration popup.
