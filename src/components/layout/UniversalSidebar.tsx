@@ -151,6 +151,16 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
   return (
     <>
       <style>{CSS}</style>
+      {/* Light dotted canvas visible around the floating workspace and collapsed sidebar. */}
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 bg-[#F5F7FB]">
+        <div
+          className="absolute inset-0 opacity-[0.12]"
+          style={{
+            backgroundImage: "radial-gradient(circle at 1px 1px, #78CFC4 1px, transparent 0)",
+            backgroundSize: "40px 40px",
+          }}
+        />
+      </div>
       {/* Invisible click-catcher so the overlaid sidebar closes on small screens. */}
       {!collapsed && <button type="button" aria-label="Close navigation" tabIndex={-1} onClick={() => setCollapsed(true)} className="fixed inset-0 z-30 cursor-default lg:hidden" />}
 
@@ -228,7 +238,7 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
         </div>
       </aside>
 
-      <div className={`relative z-50 min-h-screen ml-[60px] transition-[margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[224px]"}`}>{children}</div>
+      <div className={`relative z-50 my-2 ml-[80px] h-[calc(100svh-16px)] overflow-x-hidden overflow-y-auto rounded-l-[28px] shadow-[-12px_0_32px_rgba(15,23,42,0.14)] transition-[margin,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${collapsed ? "" : "lg:ml-[204px]"}`}>{children}</div>
     </>
   )
 }
