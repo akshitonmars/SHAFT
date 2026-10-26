@@ -3,7 +3,7 @@ import { db } from "./firebase"
 export type SpaceResourceProvider = "github" | "vercel" | "supabase"
 export interface SpaceResource { id: string; provider: SpaceResourceProvider; name: string; url?: string; detail?: string; linkedAt: string }
 export interface SpaceHistoryEvent { id: string; title: string; detail?: string; createdAt: string }
-export interface ShaftProject { id: string; name: string; description: string; createdAt: string; resources?: SpaceResource[]; history?: SpaceHistoryEvent[] }
+export interface ShaftProject { id: string; publicId?: string; name: string; description: string; createdAt: string; resources?: SpaceResource[]; history?: SpaceHistoryEvent[] }
 export interface ShaftUserData { name: string; role: string; projects: ShaftProject[]; onboardingCompleted: boolean; onboardingStep: number; completedAt?: string }
 const keyFor = (uid: string) => "shaft:v1:user:" + uid
 const emptyData = (): ShaftUserData => ({ name: "", role: "", projects: [], onboardingCompleted: false, onboardingStep: 0 })
