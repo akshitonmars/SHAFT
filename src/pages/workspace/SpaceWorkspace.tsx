@@ -345,7 +345,7 @@ function ProviderIcon({ provider }: { provider: SpaceResourceProvider }) {
   return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#EAF7F4] text-[#397D76]"><Layers3 size={18} /></span>
 }
 
-function MetricCard({ label, value, hint, icon }: { label: string; value: string; hint: string; icon: React.ReactNode }) {
+function MetricCard({ label, value, hint, icon }: { label: string; value: string; hint: string; icon: ReactNode }) {
   return <article className="rounded-2xl border border-slate-200/80 bg-white p-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-slate-500">{label}</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-50 text-slate-600">{icon}</span></div><p className="mt-5 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-slate-400">{hint}</p></article>
 }
 
