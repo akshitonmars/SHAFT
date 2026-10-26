@@ -9,13 +9,14 @@ import type { ShaftProject, ShaftUserData } from "../../lib/onboarding"
 type SimpleRoute = "overview" | "spaces" | "artifacts" | "tasks" | "connectors" | "settings" | "profile"
 
 export function OverviewPage({
-  data, displayName, connectedTools, onCreate, onNavigate,
+  data, displayName, connectedTools, onCreate, onNavigate, onOpenSpace,
 }: {
   data: ShaftUserData
   displayName: string
   connectedTools: number
   onCreate: () => void
   onNavigate: (route: SimpleRoute) => void
+  onOpenSpace: (id: string) => void
 }) {
   return (
     <>
@@ -41,7 +42,7 @@ export function OverviewPage({
           <div><h2 className="text-xl font-semibold tracking-tight">Recent Spaces</h2><p className="mt-1 text-sm text-slate-500">Pick up where you left off.</p></div>
           <button type="button" onClick={() => onNavigate("spaces")} className="inline-flex items-center gap-1 rounded-lg px-2 py-2 text-sm font-semibold text-slate-500 transition hover:text-[#101319]">All spaces <ArrowUpRight size={15} /></button>
         </div>
-        <ProjectList projects={data.projects.slice(0, 3)} onCreate={onCreate} />
+        <ProjectList projects={data.projects.slice(0, 3)} onCreate={onCreate} onOpen={onOpenSpace} />
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
         <ActionCard icon={<Code2 size={19} />} title="Explore Artifacts" text="Keep project files, references, and deliverables organized." action={() => onNavigate("artifacts")} />
@@ -51,7 +52,7 @@ export function OverviewPage({
   )
 }
 
-export function SpacesPage({ projects, onCreate }: { projects: ShaftProject[]; onCreate: () => void }) {
+export function SpacesPage({ projects, onCreate, onOpenSpace }: { projects: ShaftProject[]; onCreate: () => void; onOpenSpace: (id: string) => void }) {
   const [query, setQuery] = useState("")
   const filtered = projects.filter((project) =>
     (project.name + " " + project.description).toLowerCase().includes(query.toLowerCase())
@@ -60,7 +61,7 @@ export function SpacesPage({ projects, onCreate }: { projects: ShaftProject[]; o
     <section>
       <PageIntro eyebrow="Your work" title="My Spaces" description="One place for every product, idea, and project in progress." action={<button type="button" onClick={onCreate} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white transition hover:bg-[#252B35]"><Plus size={16} /> New Space</button>} />
       <label className="mt-7 flex h-11 max-w-md items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-slate-400"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search Spaces" className="w-full bg-transparent text-sm text-[#101319] outline-none placeholder:text-slate-400" /></label>
-      <ProjectList projects={filtered} onCreate={onCreate} />
+      <ProjectList projects={filtered} onCreate={onCreate} onOpen={onOpenSpace} />
     </section>
   )
 }
@@ -150,9 +151,9 @@ function StatCard({ label, value, hint, icon }: { label: string; value: string; 
   return <div className="rounded-2xl border border-slate-200/80 bg-white p-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-medium text-slate-500">{label}</p><span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-50 text-slate-600">{icon}</span></div><p className="mt-5 text-3xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-slate-400">{hint}</p></div>
 }
 
-function ProjectList({ projects, onCreate }: { projects: ShaftProject[]; onCreate: () => void }) {
+function ProjectList({ projects, onCreate, onOpen }: { projects: ShaftProject[]; onCreate: () => void; onOpen?: (id: string) => void }) {
   if (projects.length === 0) return <div className="mt-5 flex min-h-52 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-10 text-center"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-500 shadow-sm"><FolderKanban size={21} /></span><h3 className="mt-4 font-semibold">No Spaces found.</h3><p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">Start a Space to give your next product or project a dedicated home.</p><button type="button" onClick={onCreate} className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white transition hover:bg-[#252B35]"><Plus size={15} /> Start a Space</button></div>
-  return <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{projects.map((project) => <article key={project.id} className="rounded-2xl border border-slate-200/80 bg-white p-5 transition hover:border-[#BCDAD5] hover:shadow-lg hover:shadow-slate-900/[0.03]"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#EAF7F4] text-[#397D76]"><Code2 size={18} /></span><span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400"><Clock3 size={12} /> {new Date(project.createdAt).toLocaleDateString()}</span></div><h3 className="mt-5 text-base font-semibold">{project.name}</h3><p className="mt-2 min-h-[60px] text-sm leading-5 text-slate-500">{project.description}</p><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">Space created</span><ArrowUpRight size={16} className="text-slate-400" /></div></article>)}</div>
+  return <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{projects.map((project) => <button type="button" key={project.id} onClick={() => onOpen?.(project.id)} aria-label={"Open Space " + project.name} className="group rounded-2xl border border-slate-200/80 bg-white p-5 text-left transition hover:border-[#BCDAD5] hover:shadow-lg hover:shadow-slate-900/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#78CFC4]"><div className="flex items-start justify-between gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#EAF7F4] text-[#397D76]"><Code2 size={18} /></span><span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400"><Clock3 size={12} /> {new Date(project.createdAt).toLocaleDateString()}</span></div><h3 className="mt-5 text-base font-semibold">{project.name}</h3><p className="mt-2 min-h-[60px] text-sm leading-5 text-slate-500">{project.description}</p><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-500">Space created</span><ArrowUpRight size={16} className="text-slate-400" /></div></button>)}</div>
 }
 
 function ActionCard({ icon, title, text, action }: { icon: ReactNode; title: string; text: string; action: () => void }) {
