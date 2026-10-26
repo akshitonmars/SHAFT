@@ -359,11 +359,11 @@ function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
           </div>
           <p className="mt-2 text-xs leading-5 text-slate-500">Your permanent public reference for APIs, logs, integrations, and support. It is not an authentication credential.</p>
         </div>
-        {!space.publicId && <form onSubmit={(event) => { event.preventDefault(); if (/^\\d{6}$/.test(secret)) void onInitializeIdentity(secret) }} className="mt-5 rounded-xl border border-[#D9ECE8] bg-[#F6FBFA] p-4">
+        {!space.publicId && <form onSubmit={(event) => { event.preventDefault(); if (/^\d{6}$/.test(secret)) void onInitializeIdentity(secret) }} className="mt-5 rounded-xl border border-[#D9ECE8] bg-[#F6FBFA] p-4">
           <h3 className="text-sm font-semibold">Initialize Space identity</h3>
           <p className="mt-1 text-xs leading-5 text-slate-500">Choose a six-digit Space Secret once. It cannot be changed, and recovery will be added later.</p>
-          <label className="mt-4 block text-xs font-semibold text-slate-600">Space Secret · 6 digits<input type="password" inputMode="numeric" autoComplete="new-password" value={secret} onChange={(event) => setSecret(event.target.value.replace(/\\D/g, "").slice(0, 6))} pattern="[0-9]{6}" minLength={6} maxLength={6} required className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tracking-[0.25em] outline-none focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" placeholder="Choose a permanent code" /></label>
-          <button type="submit" disabled={saving || !/^\\d{6}$/.test(secret)} className="mt-4 h-10 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-40">Set Space Secret</button>
+          <label className="mt-4 block text-xs font-semibold text-slate-600">Space Secret · 6 digits<input type="password" inputMode="numeric" autoComplete="new-password" value={secret} onChange={(event) => setSecret(event.target.value.replace(/\D/g, "").slice(0, 6))} pattern="[0-9]{6}" minLength={6} maxLength={6} required className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tracking-[0.25em] outline-none focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" placeholder="Choose a permanent code" /></label>
+          <button type="submit" disabled={saving || !/^\d{6}$/.test(secret)} className="mt-4 h-10 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-40">Set Space Secret</button>
         </form>}
         {space.publicId && <div className="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 p-4"><span className="mt-0.5 text-[#397D76]">✓</span><div><p className="text-sm font-semibold">Space Secret configured</p><p className="mt-1 text-xs leading-5 text-slate-500">SHAFT stores a salted, protected hash—not the original code. The code cannot be viewed or changed after setup.</p></div></div>}
       </div>
