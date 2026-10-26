@@ -156,7 +156,7 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
         <div
           className="absolute inset-0 opacity-[0.12]"
           style={{
-            backgroundImage: "radial-gradient(circle at 1px 1px, #78CFC4 1px, transparent 0)",
+            backgroundImage: "radial-gradient(circle at 1px 1px, #43B5FF 1px, transparent 0)",
             backgroundSize: "40px 40px",
           }}
         />
