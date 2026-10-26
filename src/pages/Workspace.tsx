@@ -69,6 +69,7 @@ function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: st
   const [showCreate, setShowCreate] = useState(false)
   const [projectName, setProjectName] = useState("")
   const [description, setDescription] = useState("")
+  const [spaceSecret, setSpaceSecret] = useState("")
   const [createError, setCreateError] = useState("")
   const [signingOut, setSigningOut] = useState(false)
   const [connectorStatuses, setConnectorStatuses] = useState<Record<ConnectorId, ConnectorStatus>>({
@@ -175,17 +176,24 @@ function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: st
       setCreateError("Add both a Space name and a description.")
       return
     }
-    const project: ShaftProject = {
-      id: typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : String(Date.now()),
-      name: projectName.trim(),
-      description: description.trim(),
-      createdAt: new Date().toISOString(),
+    if (!/^\\d{6}$/.test(spaceSecret)) {
+      setCreateError("Choose a six-digit Space Secret. It cannot be changed later.")
+      return
     }
     try {
-      const next = await saveUserData(user.uid, { projects: [...data.projects, project] })
+      const token = await user.getIdToken()
+      const response = await fetch("/api/spaces/identity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ name: projectName.trim(), description: description.trim(), secret: spaceSecret }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result.project) throw new Error(result.error || "The Space could not be created.")
+      const next = await loadUserData(user.uid)
       setData(next)
       setProjectName("")
       setDescription("")
+      setSpaceSecret("")
       setCreateError("")
       setShowCreate(false)
       navigate("spaces")
@@ -311,6 +319,23 @@ function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: st
                     placeholder="Describe the product, stack, or objective for this Space..."
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal leading-6 text-[#101319] outline-none transition focus:border-[#43B5FF] focus:ring-4 focus:ring-[#43B5FF]/15"
                   />
+                </label>
+                <label className="block text-xs font-semibold uppercase tracking-[0.08em] text-slate-600">
+                  Space Secret · 6 digits
+                  <input
+                    value={spaceSecret}
+                    onChange={(event) => setSpaceSecret(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    minLength={6}
+                    maxLength={6}
+                    required
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Choose a permanent 6-digit code"
+                    className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-normal tracking-[0.25em] text-[#101319] outline-none transition focus:border-[#43B5FF] focus:ring-4 focus:ring-[#43B5FF]/15"
+                  />
+                  <span className="mt-1.5 block text-[11px] font-normal normal-case tracking-normal text-slate-500">Set once. SHAFT stores a protected hash, not the code itself. Recovery will be added later.</span>
                 </label>
                 {createError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{createError}</p>}
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">

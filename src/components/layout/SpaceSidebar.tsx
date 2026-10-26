@@ -146,13 +146,10 @@ export default function SpaceSidebar({ space, activeTab, onNavigate, onBack, chi
           <a href="/" aria-label="Shaft home" className="shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
             <img src="/logo.png" alt="" width={44} height={44} className="h-10 w-10 object-contain transition-transform duration-300 hover:scale-105" />
           </a>
-          <p
-            title={space.name}
-            className={`min-w-0 overflow-hidden truncate whitespace-nowrap py-1 pr-3 text-[22px] font-bold leading-[1.3] tracking-[-0.02em] text-[#101319] transition-[max-width,opacity,margin] duration-500 ${collapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-[160px] opacity-100"}`}
-            style={{ fontFamily: "Amaranth, sans-serif" }}
-          >
-            {space.name}
-          </p>
+          <div className={`min-w-0 overflow-hidden transition-[max-width,opacity,margin] duration-500 ${collapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-[160px] opacity-100"}`}>
+            <p title={space.name} className="truncate whitespace-nowrap py-0.5 pr-3 text-[22px] font-bold leading-[1.3] tracking-[-0.02em] text-[#101319]" style={{ fontFamily: "Amaranth, sans-serif" }}>{space.name}</p>
+            {space.publicId && <p title={"Space ID " + space.publicId} className="mt-0.5 truncate pr-3 font-mono text-[9px] font-medium tracking-[0.12em] text-[#397D76]">{space.publicId}</p>}
+          </div>
         </div>
 
         <div aria-hidden="true" className="mx-4 mt-3 h-px bg-black/[0.07]" />
