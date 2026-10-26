@@ -129,6 +129,29 @@ export default function SpaceWorkspace({ user, spaceId, onExit, onOpenProfile }:
     }
   }
 
+  const deleteSpace = async (secret: string, confirmName: string) => {
+    if (!space) return
+    setIdentityBusy(true)
+    setSaveError("")
+    setNotice("")
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch("/api/spaces/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ spaceId: space.id, secret, confirmName }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Could not delete this Space.")
+      setData((current) => current ? { ...current, projects: current.projects.filter((project) => project.id !== space.id) } : current)
+      onExit()
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not delete this Space.")
+    } finally {
+      setIdentityBusy(false)
+    }
+  }
+
   const initializeIdentity = async (secret: string) => {
     if (!space) return
     setIdentityBusy(true)
@@ -192,7 +215,7 @@ export default function SpaceWorkspace({ user, spaceId, onExit, onOpenProfile }:
                 {activeTab === "dashboard" && <SpaceDashboard space={space} onNavigate={navigateTab} />}
                 {activeTab === "resources" && <ResourcesView user={user} space={space} saving={saving} onAttach={attachResource} onDetach={detachResource} />}
                 {activeTab === "history" && <SpaceHistoryView space={space} />}
-                {activeTab === "settings" && <SpaceSettingsView space={space} saving={saving || identityBusy} onSave={(patch) => void updateSpace(patch, "Project settings updated", "Space name or description changed")} onInitializeIdentity={initializeIdentity} />}
+                {activeTab === "settings" && <SpaceSettingsView space={space} saving={saving || identityBusy} onSave={(patch) => void updateSpace(patch, "Project settings updated", "Space name or description changed")} onInitializeIdentity={initializeIdentity} onDelete={deleteSpace} />}
               </>
             )}
           </div>
@@ -322,15 +345,18 @@ function SpaceHistoryView({ space }: { space: ShaftProject }) {
   return <section><PageHeader eyebrow="Space activity" title="History" description="A timeline of resource links and settings changes recorded for this Space." /><div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"><HistoryTimeline space={space} /></div></section>
 }
 
-function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
+function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity, onDelete }: {
   space: ShaftProject
   saving: boolean
   onSave: (patch: Partial<ShaftProject>) => void
   onInitializeIdentity: (secret: string) => Promise<void>
+  onDelete: (secret: string, confirmName: string) => Promise<void>
 }) {
   const [name, setName] = useState(space.name)
   const [description, setDescription] = useState(space.description)
   const [secret, setSecret] = useState("")
+  const [deleteSecret, setDeleteSecret] = useState("")
+  const [deleteName, setDeleteName] = useState("")
   const [savedSpaceId, setSavedSpaceId] = useState(space.id)
   const changed = name.trim() !== space.name || description.trim() !== space.description
   useEffect(() => {
@@ -359,11 +385,11 @@ function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
           </div>
           <p className="mt-2 text-xs leading-5 text-slate-500">Your permanent public reference for APIs, logs, integrations, and support. It is not an authentication credential.</p>
         </div>
-        {!space.publicId && <form onSubmit={(event) => { event.preventDefault(); if (/^\\d{6}$/.test(secret)) void onInitializeIdentity(secret) }} className="mt-5 rounded-xl border border-[#D9ECE8] bg-[#F6FBFA] p-4">
+        {!space.publicId && <form onSubmit={(event) => { event.preventDefault(); if (/^\d{6}$/.test(secret)) void onInitializeIdentity(secret) }} className="mt-5 rounded-xl border border-[#D9ECE8] bg-[#F6FBFA] p-4">
           <h3 className="text-sm font-semibold">Initialize Space identity</h3>
           <p className="mt-1 text-xs leading-5 text-slate-500">Choose a six-digit Space Secret once. It cannot be changed, and recovery will be added later.</p>
-          <label className="mt-4 block text-xs font-semibold text-slate-600">Space Secret · 6 digits<input type="password" inputMode="numeric" autoComplete="new-password" value={secret} onChange={(event) => setSecret(event.target.value.replace(/\\D/g, "").slice(0, 6))} pattern="[0-9]{6}" minLength={6} maxLength={6} required className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tracking-[0.25em] outline-none focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" placeholder="Choose a permanent code" /></label>
-          <button type="submit" disabled={saving || !/^\\d{6}$/.test(secret)} className="mt-4 h-10 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-40">Set Space Secret</button>
+          <label className="mt-4 block text-xs font-semibold text-slate-600">Space Secret · 6 digits<input type="password" inputMode="numeric" autoComplete="new-password" value={secret} onChange={(event) => setSecret(event.target.value.replace(/\D/g, "").slice(0, 6))} pattern="[0-9]{6}" minLength={6} maxLength={6} required className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm tracking-[0.25em] outline-none focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" placeholder="Choose a permanent code" /></label>
+          <button type="submit" disabled={saving || !/^\d{6}$/.test(secret)} className="mt-4 h-10 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:opacity-40">Set Space Secret</button>
         </form>}
         {space.publicId && <div className="mt-4 flex items-start gap-3 rounded-xl bg-slate-50 p-4"><span className="mt-0.5 text-[#397D76]">✓</span><div><p className="text-sm font-semibold">Space Secret configured</p><p className="mt-1 text-xs leading-5 text-slate-500">SHAFT stores a salted, protected hash—not the original code. The code cannot be viewed or changed after setup.</p></div></div>}
       </div>
@@ -372,6 +398,16 @@ function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
         <label className="mt-5 block text-sm font-semibold">Description<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={1200} rows={4} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal leading-6 outline-none focus:border-[#5D9991] focus:ring-4 focus:ring-[#78CFC4]/20" placeholder="What is this Space for?" /></label>
         <div className="mt-6 flex flex-col justify-between gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center"><p className="text-xs leading-5 text-slate-400">Created {new Date(space.createdAt).toLocaleString()}</p><button type="submit" disabled={saving || !name.trim() || !changed} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#101319] px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">{saving ? <RefreshCw size={15} className="animate-spin" /> : <Check size={15} />}{saving ? "Saving…" : "Save changes"}</button></div>
       </form>
+      <section className="mt-6 rounded-2xl border border-red-200 bg-white p-5 sm:p-7">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-red-600">Danger zone</p>
+        <h2 className="mt-2 text-lg font-semibold text-[#101319]">Delete this Space</h2>
+        <p className="mt-2 text-sm leading-6 text-slate-500">This permanently removes the Space from your SHAFT workspace, including its saved resource links and history. Connected provider accounts are not deleted. This action cannot be undone.</p>
+        {!space.publicId ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Set up this Space's identity first. A Space Secret is required to delete it.</p> : <form onSubmit={(event) => { event.preventDefault(); if (deleteName === space.name && /^\d{6}$/.test(deleteSecret)) void onDelete(deleteSecret, deleteName) }} className="mt-5 space-y-4">
+          <label className="block text-xs font-semibold text-slate-600">Type the Space name to confirm<input value={deleteName} onChange={(event) => setDeleteName(event.target.value)} required autoComplete="off" className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal text-[#101319] outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100" placeholder={space.name} /></label>
+          <label className="block text-xs font-semibold text-slate-600">Space Secret · 6 digits<input type="password" inputMode="numeric" autoComplete="off" value={deleteSecret} onChange={(event) => setDeleteSecret(event.target.value.replace(/\D/g, "").slice(0, 6))} pattern="[0-9]{6}" minLength={6} maxLength={6} required className="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-normal tracking-[0.25em] text-[#101319] outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100" placeholder="Enter your Space Secret" /></label>
+          <button type="submit" disabled={saving || deleteName !== space.name || !/^\d{6}$/.test(deleteSecret)} className="inline-flex h-10 items-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"><Trash2 size={14} /> Permanently delete Space</button>
+        </form>}
+      </section>
     </section>
   )
 }

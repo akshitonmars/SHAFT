@@ -2,8 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import type { User } from "firebase/auth"
 import { signOut } from "firebase/auth"
 import { auth } from "../lib/firebase"
-import { loadUserData, readUserData, saveUserData } from "../lib/onboarding"
-import type { ShaftProject } from "../lib/onboarding"
+import { loadUserData, readUserData } from "../lib/onboarding"
 import { fetchStatus } from "../lib/connectors"
 import type { ConnectorId, ConnectorStatus } from "../lib/connectors"
 import DashboardNavbar from "../components/layout/DashboardNavbar"
@@ -176,7 +175,7 @@ function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: st
       setCreateError("Add both a Space name and a description.")
       return
     }
-    if (!/^\\d{6}$/.test(spaceSecret)) {
+    if (!/^\d{6}$/.test(spaceSecret)) {
       setCreateError("Choose a six-digit Space Secret. It cannot be changed later.")
       return
     }
@@ -324,7 +323,7 @@ function WorkspaceHome({ user, onOpenSpace }: { user: User; onOpenSpace: (id: st
                   Space Secret · 6 digits
                   <input
                     value={spaceSecret}
-                    onChange={(event) => setSpaceSecret(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+                    onChange={(event) => setSpaceSecret(event.target.value.replace(/\D/g, "").slice(0, 6))}
                     inputMode="numeric"
                     pattern="[0-9]{6}"
                     minLength={6}
