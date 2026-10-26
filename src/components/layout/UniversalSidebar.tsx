@@ -18,7 +18,6 @@ interface UniversalSidebarProps {
   role?: string
   onSignOut?: () => void
   signingOut?: boolean
-  onNavigate?: (item: UniversalSidebarItem) => void
 }
 
 const NAV: { label: UniversalSidebarItem; href: string }[] = [
@@ -120,7 +119,7 @@ function Ico({ children, style }: { children: ReactNode; style?: CSSProperties }
   )
 }
 
-export default function UniversalSidebar({ children, activeItem, overlayOpen = false, onNavigate }: UniversalSidebarProps) {
+export default function UniversalSidebar({ children, activeItem, overlayOpen = false }: UniversalSidebarProps) {
   const [collapsed, setCollapsed] = useState(() => {
     if (typeof window === "undefined") return false
     try {
@@ -167,10 +166,10 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
         <span aria-hidden="true" style={SHINE} className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${collapsed ? "opacity-100" : "opacity-0"}`} />
 
         {/* Brand: logo always, wordmark only when expanded */}
-        <a href="/" aria-label="Shaft home" className="relative mt-3 flex h-12 shrink-0 items-center rounded-lg pl-[17px] outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
-          <img src="/logo.png" alt="" width={34} height={34} className="h-[30px] w-[30px] shrink-0 object-contain transition-transform duration-300 hover:scale-105" />
+        <a href="/" aria-label="Shaft home" className="relative mt-2 flex h-14 shrink-0 items-center rounded-lg pl-3 outline-none focus-visible:ring-2 focus-visible:ring-[#43B5FF]">
+          <img src="/logo.png" alt="" width={44} height={44} className="h-10 w-10 shrink-0 object-contain transition-transform duration-300 hover:scale-105" />
           <span
-            className={`overflow-hidden whitespace-nowrap text-[24px] font-bold leading-none tracking-[-0.02em] text-[#101319] transition-[max-width,opacity,margin] duration-500 ${collapsed ? "ml-0 max-w-0 opacity-0" : "ml-2.5 max-w-[140px] opacity-100"}`}
+            className={`overflow-hidden whitespace-nowrap py-1 text-[28px] font-bold leading-[1.3] tracking-[-0.02em] text-[#101319] transition-[max-width,opacity,margin] duration-500 ${collapsed ? "ml-0 max-w-0 opacity-0" : "ml-3 max-w-[160px] opacity-100"}`}
             style={{ fontFamily: "Amaranth, sans-serif" }}
           >
             Shaft
@@ -189,11 +188,6 @@ export default function UniversalSidebar({ children, activeItem, overlayOpen = f
               <a
                 key={item.label}
                 href={item.href}
-                onClick={(event) => {
-                  if (!onNavigate || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                  event.preventDefault()
-                  onNavigate(item.label)
-                }}
                 aria-current={active ? "page" : undefined}
                 aria-label={collapsed ? item.label : undefined}
                 className={`${itemBase} ${shape} ${active ? "bg-slate-900/[0.06] text-[#101319]" : "text-slate-500 hover:bg-slate-900/[0.04] hover:text-[#101319]"}`}
