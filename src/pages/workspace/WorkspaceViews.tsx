@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react"
 import type { User } from "firebase/auth"
 import {
   ArrowRight, ArrowUpRight, Clock3, Code2, FolderKanban,
-  Gauge, Lightbulb, Plus, Search, Sparkles, UserRound, ShieldCheck,
+  Gauge, Lightbulb, Plus, Search, UserRound, ShieldCheck,
 } from "lucide-react"
 import type { ShaftProject, ShaftUserData } from "../../lib/onboarding"
 
@@ -44,7 +44,7 @@ export function OverviewPage({
         <ProjectList projects={data.projects.slice(0, 3)} onCreate={onCreate} />
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <ActionCard icon={<Sparkles size={19} />} title="Meet SHAFT AI" text="Your AI project companion is taking shape." action={() => onNavigate("artifacts")} />
+        <ActionCard icon={<Code2 size={19} />} title="Explore Artifacts" text="Keep project files, references, and deliverables organized." action={() => onNavigate("artifacts")} />
         <ActionCard icon={<Gauge size={19} />} title="Connect your tools" text="Manage GitHub, Vercel, and Supabase from one place." action={() => onNavigate("connectors")} />
       </div>
     </>
