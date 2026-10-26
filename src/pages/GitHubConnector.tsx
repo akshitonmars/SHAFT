@@ -16,9 +16,9 @@ type Repository = {
   stargazersCount: number
 }
 
-interface GitHubConnectorProps { user: User }
+interface GitHubConnectorProps { user: User; embedded?: boolean }
 
-export function GitHubConnector({ user }: GitHubConnectorProps) {
+export function GitHubConnector({ user, embedded = false }: GitHubConnectorProps) {
   const [status, setStatus] = useState<"loading" | "connected" | "disconnected">("loading")
   const [username, setUsername] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
@@ -68,7 +68,7 @@ export function GitHubConnector({ user }: GitHubConnectorProps) {
     else if (params.get("error") === "configuration_required") setMessage("GitHub OAuth is not configured yet. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to Vercel.")
     else if (params.get("error")) setMessage("GitHub authorization was not completed. You can try again.")
     if (params.has("connected") || params.has("error")) {
-      window.history.replaceState({}, "", "/github")
+      window.history.replaceState({}, "", embedded ? "/workspace/connectors?tab=github" : "/github")
     }
     void load()
   }, [load])
@@ -107,11 +107,11 @@ export function GitHubConnector({ user }: GitHubConnectorProps) {
     (repo.fullName + " " + (repo.description || "") + " " + (repo.language || "")).toLowerCase().includes(filter.toLowerCase())
   )
 
-  return <UniversalSidebar activeItem="Connectors" displayName={user.displayName || (user.email ? user.email.split("@")[0] : "Builder")}>
-  <main className="min-h-screen bg-[#F5F7FB] px-4 py-6 text-[#101319] sm:px-8 sm:py-10">
+  const content = (
+  <main className={(embedded ? "min-h-0" : "min-h-screen") + " bg-[#F5F7FB] px-4 py-6 text-[#101319] sm:px-8 sm:py-10"}>
     <div className="mx-auto max-w-5xl">
-      <a href="/workspace" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-[#101319]"><ArrowLeft size={16} /> Back to workspace</a>
-      <div className="mt-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      {!embedded && <a href="/workspace/overview" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-[#101319]"><ArrowLeft size={16} /> Back to workspace</a>}
+      <div className={(embedded ? "mt-0" : "mt-8") + " flex flex-col justify-between gap-5 sm:flex-row sm:items-end"}>
         <div><p className="text-xs font-semibold uppercase tracking-[0.17em] text-[#397D76]">Developer tools</p><h1 className="mt-3 text-4xl font-semibold tracking-[-0.05em] sm:text-5xl" style={{ fontFamily: "Amaranth, sans-serif" }}>GitHub connector</h1><p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">Bring your repositories into SHAFT. Start by connecting your account and viewing the repositories you can access.</p></div>
         <button type="button" onClick={() => void load()} disabled={status === "loading" || busy} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 disabled:opacity-50"><RefreshCw size={15} className={status === "loading" ? "animate-spin" : ""} /> Refresh</button>
       </div>
@@ -131,7 +131,9 @@ export function GitHubConnector({ user }: GitHubConnectorProps) {
         {filtered.length === 0 ? <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center"><Github size={24} className="mx-auto text-slate-400" /><p className="mt-3 font-semibold">{repositories.length ? "No matching repositories" : "No repositories found"}</p><p className="mt-1 text-sm text-slate-500">Try a different search or check repository access in GitHub.</p></div> : <div className="mt-4 grid gap-3 md:grid-cols-2">{filtered.map((repo) => <article key={repo.id} className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-[#BCDAD5]"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-start gap-3"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-50 text-slate-700"><GitBranch size={18} /></span><div className="min-w-0"><h3 className="break-words font-semibold">{repo.fullName}</h3><p className="mt-1 text-xs text-slate-400">{repo.private ? "Private repository" : "Public repository"}{repo.language ? " · " + repo.language : ""}</p></div></div><a href={repo.htmlUrl} target="_blank" rel="noreferrer" aria-label={"Open " + repo.fullName + " on GitHub"} className="shrink-0 rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-[#101319]"><ExternalLink size={16} /></a></div><p className="mt-4 min-h-10 text-sm leading-5 text-slate-500">{repo.description || "No description provided."}</p><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-400"><span>Branch: {repo.defaultBranch || "unknown"}</span><span>Updated {repo.updatedAt ? new Date(repo.updatedAt).toLocaleDateString() : "—"}</span></div></article>)}</div>}
       </section>}
     </div>
-  </main></UniversalSidebar>
+  </main>
+  )
+  return embedded ? content : <UniversalSidebar activeItem="Connectors" displayName={user.displayName || (user.email ? user.email.split("@")[0] : "Builder")}>{content}</UniversalSidebar>
 }
 
 export default GitHubConnector
