@@ -129,6 +129,29 @@ export default function SpaceWorkspace({ user, spaceId, onExit, onOpenProfile }:
     }
   }
 
+  const deleteSpace = async (secret: string, confirmName: string) => {
+    if (!space) return
+    setIdentityBusy(true)
+    setSaveError("")
+    setNotice("")
+    try {
+      const token = await user.getIdToken()
+      const response = await fetch("/api/spaces/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ spaceId: space.id, secret, confirmName }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(result.error || "Could not delete this Space.")
+      setData((current) => current ? { ...current, projects: current.projects.filter((project) => project.id !== space.id) } : current)
+      onExit()
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not delete this Space.")
+    } finally {
+      setIdentityBusy(false)
+    }
+  }
+
   const initializeIdentity = async (secret: string) => {
     if (!space) return
     setIdentityBusy(true)
@@ -192,7 +215,7 @@ export default function SpaceWorkspace({ user, spaceId, onExit, onOpenProfile }:
                 {activeTab === "dashboard" && <SpaceDashboard space={space} onNavigate={navigateTab} />}
                 {activeTab === "resources" && <ResourcesView user={user} space={space} saving={saving} onAttach={attachResource} onDetach={detachResource} />}
                 {activeTab === "history" && <SpaceHistoryView space={space} />}
-                {activeTab === "settings" && <SpaceSettingsView space={space} saving={saving || identityBusy} onSave={(patch) => void updateSpace(patch, "Project settings updated", "Space name or description changed")} onInitializeIdentity={initializeIdentity} />}
+                {activeTab === "settings" && <SpaceSettingsView space={space} saving={saving || identityBusy} onSave={(patch) => void updateSpace(patch, "Project settings updated", "Space name or description changed")} onInitializeIdentity={initializeIdentity} onDelete={deleteSpace} />}
               </>
             )}
           </div>
@@ -322,7 +345,7 @@ function SpaceHistoryView({ space }: { space: ShaftProject }) {
   return <section><PageHeader eyebrow="Space activity" title="History" description="A timeline of resource links and settings changes recorded for this Space." /><div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"><HistoryTimeline space={space} /></div></section>
 }
 
-function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
+function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity, onDelete }: {
   space: ShaftProject
   saving: boolean
   onSave: (patch: Partial<ShaftProject>) => void
@@ -330,7 +353,7 @@ function SpaceSettingsView({ space, saving, onSave, onInitializeIdentity }: {
 }) {
   const [name, setName] = useState(space.name)
   const [description, setDescription] = useState(space.description)
-  const [secret, setSecret] = useState("")
+  const [secret, setSecret] = useState("")\n  const [deleteSecret, setDeleteSecret] = useState("")\n  const [deleteName, setDeleteName] = useState("")
   const [savedSpaceId, setSavedSpaceId] = useState(space.id)
   const changed = name.trim() !== space.name || description.trim() !== space.description
   useEffect(() => {
