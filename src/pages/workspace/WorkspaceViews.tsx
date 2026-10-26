@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react"
 import type { User } from "firebase/auth"
 import {
-  ArrowRight, ArrowUpRight, Bot, Clock3, Code2, FolderKanban,
+  ArrowRight, ArrowUpRight, Clock3, Code2, FolderKanban,
   Gauge, Lightbulb, Plus, Search, Sparkles, UserRound, ShieldCheck,
 } from "lucide-react"
 import type { ShaftProject, ShaftUserData } from "../../lib/onboarding"
